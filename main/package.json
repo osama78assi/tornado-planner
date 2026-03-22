@@ -1,0 +1,23 @@
+{
+    "name": "tornado-planner",
+    "version": "1.0.0",
+    "description": "main application to manage my tasks and plans",
+    "license": "ISC",
+    "author": "Osama Assi",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "electron .",
+        "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
+    },
+    "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "electron": "^40.6.0",
+        "jest": "^30.2.0",
+        "sequelize-cli": "^6.6.5"
+    },
+    "dependencies": {
+        "sequelize": "^6.37.7",
+        "sqlite3": "^5.1.7"
+    }
+}

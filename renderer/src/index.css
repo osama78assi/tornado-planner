@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+:root {
+    --main-interactive-color: #1a2f40;
+    --main-interactive-color-v1: #3d9dec;
+    --main-interactive-color-v2: #2383d1;
+    --main-interactive-color-v3: #1c5a8d;
+
+    --secondary-interactive-color: #ee6300;
+    --secondary-interactive-color-v1: #e87320;
+}
+
+:root.dark-theme {
+    --main-color: #0d1117;
+    --secondary-color: #161b22;
+    --thirdary-color: #1f262f;
+    --forthary-color: #3b3f44;
+    --fifthary-color: #62666b;
+    --sixary-color: #9294965a;
+
+    --shallow-color: #3333335b;
+
+    --main-text-color: #fafafa;
+    --secondary-text-color: #d8d8d8;
+    --thirdary-text-color: #ffffff8c;
+
+    --main-divider-color: #e6e6e630;
+    --srcondary-divider-color: #e6e6e64f;
+
+    --main-frame-color: #1b232b;
+}
+
+:root.light-theme {
+    --main-color: #f8f9fb;
+    --secondary-color: #ffffff;
+    --thirdary-color: #eef1f5;
+    --forthary-color: #dbdfe4;
+
+    --shallow-color: #3333335b;
+
+    --main-text-color: #1a1a1a;
+    --secondary-text-color: #4a5568;
+
+    --main-divider-color: #d6d9de50;
+
+    --main-frame-color: #e9edf2;
+}
+
+#root {
+    position: relative;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Scrollbar styling for Electron (Webkit-based) */
+*::-webkit-scrollbar {
+    width: 0.35rem; /* slightly thicker for visibility */
+    background-color: var(--forthary-color);
+    border-radius: 0.2rem; /* rounded edges */
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(--fifthary-color);
+    border-radius: 0.2rem;
+    transition: background 0.2s ease-in-out;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: var(--sixary-color);
+}
+
+*:is(:focus, :focus-visible) {
+    outline: 1px solid var(--main-text-color);
+}
+
+*:disabled {
+    @apply cursor-not-allowed! grayscale-25!;
+}
+
+/* Utility */
+
+.btn {
+    @apply cursor-pointer transition-colors;
+}
+
+.btn-icon {
+    @apply flex items-center gap-3;
+}
+
+.btn-main {
+    @apply bg-(--main-interactive-color-v2) hover:bg-(--main-interactive-color-v1) text-(--main-text-color);
+}
+
+.btn-secondary {
+    @apply bg-(--secondary-interactive-color) hover:bg-(--secondary-interactive-color-v1) text-(--main-text-color);
+}
+
+.btn-main-outline {
+    @apply border border-(--main-interactive-color-v2) text-(--main-interactive-color-v2) hover:bg-(--main-interactive-color-v3) hover:text-(--main-text-color);
+}
+
+.btn-secondary-outline {
+    @apply border border-(--secondary-interactive-color) text-(--secondary-interactive-color) hover:bg-(--secondary-interactive-color) hover:text-(--main-text-color);
+}
+
+.btn-sm {
+    @apply text-sm p-0.5 rounded-sm;
+}
+
+.btn-md {
+    @apply text-lg p-1.5 rounded-lg;
+}
+
+.btn-lg {
+    @apply text-xl p-2 rounded-xl;
+}
+
+.main-tag {
+    @apply bg-(--main-interactive-color) text-(--main-interactive-color-v1);
+}
+
+.secondary-tag {
+    @apply bg-(--secondary-interactive-color) text-(--secondary-interactive-color-v3);
+}
+
+/* Main window */
+.frame {
+    @apply bg-(--main-frame-color) h-7.5 flex justify-end fixed top-0;
+    position: relative;
+    z-index: 9999;
+    box-shadow: 0px 0px 15px #0000006e;
+}
+
+.applayout {
+    @apply bg-(--main-color) text-(--main-text-color) h-dvh overflow-auto;
+}
+
+.dragable {
+    -webkit-app-region: drag;
+}
+
+.main-window {
+    @apply h-[calc(100dvh-(var(--spacing)*7.5))] flex relative overflow-auto;
+}
+
+#back-btn:hover > :first-child {
+    transform: translateX(-2px);
+}
+
+/* Main Application */
+.sidebar {
+    @apply border-e border-(--main-divider-color) bg-(--secondary-color) w-50 transition-[width]  h-[100%];
+}
+
+.main-content {
+    @apply bg-(--main-color) w-[calc(100%-var(--spacing)*50)] transition-[width];
+}
+
+.main-content_header {
+    @apply flex justify-between items-center bg-[var(--secondary-color)] h-[40px] border-b border-b-[var(--main-divider-color)] z-50 relative;
+}
+
+.main-content_body {
+    @apply bg-(--main-color) w-full transition-[width] overflow-auto;
+    height: calc(100% - 40px);
+}
+
+.sidebar-header {
+    @apply p-3 flex justify-between items-center border-b border-b-[var(--main-divider-color)] h-[40px];
+}
+
+.nav-item {
+    @apply transition-all cursor-pointer;
+}
+
+.nav-item:hover * {
+    color: var(--main-secondary-color) !important;
+}
+
+/* Sidebar container and main container transitions */
+.main-content_full {
+    @apply w-full;
+}
+
+.sidebar_toggled {
+    @apply w-0 border-0;
+}
+
+.sidebar_floating {
+    @apply absolute transition-all left-0 top-[40px] h-[calc(100%-40px)];
+}
+
+.sidebar_floating_hidden {
+    @apply -left-full!;
+}
+/* HTML: <div class="loader"></div> */
+.spinnar {
+    width: 50px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(
+                farthest-side,
+                var(--main-interactive-color-v2) 94%,
+                #0000
+            )
+            top/8px 8px no-repeat,
+        conic-gradient(#0000 30%, var(--main-interactive-color-v2));
+    -webkit-mask: radial-gradient(
+        farthest-side,
+        #0000 calc(100% - 8px),
+        #000 0
+    );
+    animation: l13 1s infinite linear;
+}
+@keyframes l13 {
+    100% {
+        transform: rotate(1turn);
+    }
+}

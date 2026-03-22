@@ -1,0 +1,46 @@
+import { GoSidebarCollapse } from "react-icons/go";
+import { useMainLayoutContext } from "./MainProvider";
+import { useNavigate } from "react-router-dom";
+import HomeBtn from "./HomeBtn";
+
+function SidebarContainer({ mainBtn = null, children }) {
+    const { isSidebarToggled, isFloating, toggleSidebar } =
+        useMainLayoutContext();
+
+    let toggledClass = "";
+
+    if (!isFloating && isSidebarToggled) {
+        toggledClass = "sidebar_toggled";
+    }
+
+    if (isFloating && isSidebarToggled) {
+        toggledClass = "sidebar_floating sidebar_floating_hidden";
+    }
+
+    if (isFloating && !isSidebarToggled) {
+        toggledClass = "sidebar_floating";
+    }
+
+    return (
+        <div className={`sidebar ${toggledClass}`}>
+            <div className="w-50">
+                <div className="sidebar-header">
+                    {mainBtn ? mainBtn : <HomeBtn />}
+
+                    {!isFloating ? (
+                        <button
+                            className="p-1 cursor-pointer"
+                            onClick={toggleSidebar}
+                        >
+                            <GoSidebarCollapse className="text-2xl text-[var(--main-text-color-v3)] hover:text-[var(--secondary-text-v2)] transition-colors" />
+                        </button>
+                    ) : null}
+                </div>
+
+                {children}
+            </div>
+        </div>
+    );
+}
+
+export default SidebarContainer;

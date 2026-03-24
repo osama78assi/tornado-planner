@@ -12,7 +12,7 @@ export const searchNotes = throttleSearch(async function ({
         ],
     };
 
-    const res = await window.notes.get(page, limit, filters, true);
+    const res = await window.notes.get({ page, limit, filters, search: true });
 
     if (!res.success) {
         throw new Error(res.message);

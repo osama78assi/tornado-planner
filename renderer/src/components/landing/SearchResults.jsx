@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Tag from "../ui/Tag";
 import Button from "../ui/Button";
 import toast from "react-hot-toast";
@@ -17,6 +17,17 @@ const SearchResults = memo(function SearchResults({
         count: 0,
     });
     const [loading, setLoading] = useState(false);
+    const initialRender = useRef(true);
+
+    // To use in two different cases
+    async function fetchData(query, page) {
+        const res = await fetchFunction?.({
+            query,
+            page,
+            limit: 1,
+        });
+        return res;
+    }
 
     // Look for pagination change
     useEffect(() => {
@@ -25,11 +36,7 @@ const SearchResults = memo(function SearchResults({
 
             try {
                 setLoading(true);
-                const res = await fetchFunction?.({
-                    query,
-                    page: pagination.page,
-                    limit: 1,
-                });
+                const res = await fetchData(query, pagination.page);
 
                 // In case the res skipped to not update the state
                 if (res) {
@@ -50,7 +57,44 @@ const SearchResults = memo(function SearchResults({
         }
 
         load();
-    }, [query, pagination.page]);
+    }, [pagination.page]);
+
+    // Look for query change
+    useEffect(() => {
+        async function load() {
+            if (!query) return;
+
+            try {
+                setLoading(true);
+                const res = await fetchData(query, pagination.page);
+
+                // In case the res skipped to not update the state
+                if (res) {
+                    // Extract the data, pagination info
+                    // The different here that we replace the entire data
+                    setData(() => res.data);
+                    setPagination({
+                        page: pagination.page,
+                        pages: res.pagination.pages,
+                        count: res.pagination.count,
+                    });
+                }
+            } catch (err) {
+                console.log(err);
+                toast.error(err.message || "Something went wrong");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Skip initial render
+        if (initialRender.current) {
+            initialRender.current = false;
+            return;
+        }
+
+        load();
+    }, [query]);
 
     function showMore() {
         if (pagination.page < pagination.pages) {

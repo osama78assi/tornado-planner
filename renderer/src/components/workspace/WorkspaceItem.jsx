@@ -46,7 +46,7 @@ function WorkspaceItem({ updateData, workspace }) {
         <>
             <div
                 className={`flex flex-wrap border border-(--main-divider-color) p-3 rounded-xl cursor-pointer transition-[border-color] hover:border-(--main-interactive-color-v3)`}
-                onClick={(e) => {
+                onClick={() => {
                     handleClick();
                 }}
             >

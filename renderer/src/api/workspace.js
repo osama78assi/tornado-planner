@@ -1,5 +1,5 @@
 export async function getWorkspaces({ page = 1, limit = 10, filters }) {
-    const res = await window.workspaces.get(page, limit, filters);
+    const res = await window.workspaces.get({ page, limit, filters });
 
     if (!res.success) {
         throw new Error(res.message);
@@ -19,7 +19,7 @@ export async function createWorkspace(payload) {
 }
 
 export async function updateWorkspace(id, payload) {
-    const res = await window.workspaces.update(id, payload);
+    const res = await window.workspaces.update({ id, payload });
 
     if (!res.success) throw new Error(res.message);
 

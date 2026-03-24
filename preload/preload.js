@@ -18,18 +18,18 @@ const { contextBridge, ipcRenderer } = require("electron");
     contextBridge.exposeInMainWorld("workspaces", {
         create: (payload) =>
             ipcRenderer.invoke(channels.workspaces.create, payload),
-        get: (page, limit, filters) =>
+        get: ({ page, limit, filters }) =>
             ipcRenderer.invoke(channels.workspaces.get, page, limit, filters),
-        update: (id, payload) =>
+        update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.workspaces.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.workspaces.destroy, id),
     });
 
     contextBridge.exposeInMainWorld("plans", {
         create: (payload) => ipcRenderer.invoke(channels.plans.create, payload),
-        get: (page, limit, filters) =>
+        get: ({ page, limit, filters }) =>
             ipcRenderer.invoke(channels.plans.get, page, limit, filters),
-        update: (id, payload) =>
+        update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.plans.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.plans.destroy, id),
     });
@@ -37,16 +37,16 @@ const { contextBridge, ipcRenderer } = require("electron");
     contextBridge.exposeInMainWorld("folders", {
         create: (payload) =>
             ipcRenderer.invoke(channels.folders.create, payload),
-        get: (page, limit, filters) =>
+        get: ({ page, limit, filters }) =>
             ipcRenderer.invoke(channels.folders.get, page, limit, filters),
-        update: (id, payload) =>
+        update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.folders.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.folders.destroy, id),
     });
 
     contextBridge.exposeInMainWorld("tasks", {
         create: (payload) => ipcRenderer.invoke(channels.tasks.create, payload),
-        get: (page, limit, filters, search) =>
+        get: ({ page, limit, filters, search }) =>
             ipcRenderer.invoke(
                 channels.tasks.get,
                 page,
@@ -54,14 +54,14 @@ const { contextBridge, ipcRenderer } = require("electron");
                 filters,
                 search,
             ),
-        update: (id, payload) =>
+        update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.tasks.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.tasks.destroy, id),
     });
 
     contextBridge.exposeInMainWorld("notes", {
         create: (payload) => ipcRenderer.invoke(channels.notes.create, payload),
-        get: (page, limit, filters, search) =>
+        get: ({ page, limit, filters, search }) =>
             ipcRenderer.invoke(
                 channels.notes.get,
                 page,
@@ -69,7 +69,7 @@ const { contextBridge, ipcRenderer } = require("electron");
                 filters,
                 search,
             ),
-        update: (id, payload) =>
+        update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.notes.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.notes.destroy, id),
     });

@@ -25,7 +25,7 @@
     --thirdary-text-color: #ffffff8c;
 
     --main-divider-color: #e6e6e630;
-    --srcondary-divider-color: #e6e6e64f;
+    --scondary-divider-color: #e6e6e64f;
 
     --main-frame-color: #1b232b;
 }
@@ -76,7 +76,7 @@
 }
 
 *:disabled {
-    @apply cursor-not-allowed! grayscale-25!;
+    @apply cursor-not-allowed! grayscale-[1]!;
 }
 
 /* Utility */
@@ -219,4 +219,54 @@
     100% {
         transform: rotate(1turn);
     }
+}
+
+/* Tables */
+
+.tasktable-container {
+    @apply w-full h-full overflow-auto border;
+    border-color: var(--main-divider-color);
+    background: var(--secondary-color);
+}
+
+.tasktable {
+    @apply w-full border-collapse table-fixed!; /* table-fixed is important for truncation */
+    color: var(--secondary-text-color);
+}
+
+.tasktable-thead {
+    background: var(--thirdary-color);
+}
+
+.tasktable-thead.sticky {
+    @apply sticky top-0 z-10;
+}
+
+.tasktable-th {
+    @apply text-left px-4 py-3 font-medium;
+    color: var(--main-text-color);
+    border-bottom: 1px solid var(--main-divider-color);
+}
+
+/* Add right border to header cells except last */
+.tasktable-th:not(:last-child) {
+    @apply border-e border-e-(--main-divider-color)!;
+}
+
+.tasktable-td {
+    @apply px-4 py-3;
+    border-bottom: 1px solid var(--main-divider-color);
+}
+
+/* Add right border to body cells except last */
+.tasktable-td:not(:last-child) {
+    @apply border-e border-e-(--main-divider-color)!;
+}
+
+.tasktable-tr {
+    @apply transition-colors duration-150;
+}
+
+.tasktable-tr:hover {
+    background: var(--shallow-color);
 }

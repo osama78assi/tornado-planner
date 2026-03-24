@@ -129,7 +129,7 @@ function Dropdown({
 
         if (e.key === " " || e.key === "Enter") {
             e.preventDefault();
-            setOpen(true);
+            setOpen((t) => !t)
         }
 
         // Focus in the first option.
@@ -211,7 +211,7 @@ function Dropdown({
         labelToRender = null;
     } else if (activeItem && !labelOnActive) {
         labelToRender = (
-            <p className="overflow-hidden whitespace-nowrap text-ellipsis w-[calc(100%-30px)]">
+            <p className="overflow-hidden whitespace-nowrap text-ellipsis w-[calc(100%-30px)] first-letter:capitalize">
                 {activeItem.label}
             </p>
         );
@@ -219,7 +219,7 @@ function Dropdown({
         labelToRender = labelOnActive?.(activeItem);
     } else if (label) {
         labelToRender = (
-            <p className="overflow-hidden whitespace-nowrap text-ellipsis w-[calc(100%-30px)]">
+            <p className="overflow-hidden whitespace-nowrap text-ellipsis w-[calc(100%-30px)] first-letter:capitalize">
                 {label}
             </p>
         );
@@ -235,14 +235,14 @@ function Dropdown({
             ref={parentRef}
             data-target-select={id}
             disabled={disabled}
-            tabIndex={0}
+            tabIndex={disabled ? -1 : 0}
             onKeyDown={handleKeyStrokeP}
             onBlur={handleBlurP}
         >
             {openBtn ? (
                 openBtn
             ) : (
-                <div className="flex w-full justify-between items-center gap-1">
+                <div className="flex w-full justify-between items-center gap-1 first-letter:capitalize">
                     {/* Render what is available */}
                     {labelToRender}
 

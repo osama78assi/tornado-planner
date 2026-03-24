@@ -5,7 +5,7 @@ import Tag from "../ui/Tag";
 import SearchResults from "./SearchResults";
 import { searchNotes } from "../../api/notes";
 import NoteResult from "../note/NoteResult";
-import { searchTasks } from "../../api/tasks";
+import { searchTasks } from "../../api/task";
 import TaskResult from "../task/TaskResult";
 import Input from "../ui/Input";
 

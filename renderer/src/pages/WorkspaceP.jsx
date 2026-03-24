@@ -4,10 +4,11 @@ import { useParams } from "react-router-dom";
 import WorkspaceCardHeader from "../components/workspace/WorkspaceCardHeader";
 import Plans from "../components/plan/Plans";
 import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
-import { getPlans } from "../api/plan";
+import { createPlan, getPlans } from "../api/plan";
 import Modal from "../components/ui/Modal";
 import { useState } from "react";
 import PlanForm from "../components/plan/PlanForm";
+import toast from "react-hot-toast";
 
 function WorkspaceP() {
     // We need to fetch plans for the selected workspace
@@ -18,6 +19,21 @@ function WorkspaceP() {
         filters: { workspaceId },
     });
     const [isOpen, setIsOpen] = useState(false);
+
+    async function handleSubmit(values) {
+        try {
+            const res = await createPlan({ ...values, workspaceId });
+
+            setData((data) => [res, ...data]);
+
+            toast.success("New plan created successfully");
+
+            setIsOpen(false)
+        } catch (err) {
+            toast.error(err.message);
+            throw err;
+        }
+    }
 
     return (
         <div className="px-2 py-3">
@@ -56,7 +72,7 @@ function WorkspaceP() {
                 }
                 className="max-h-[70dvh]! overflow-auto bg-(--main-color)! w-[calc(100vw-24px)]! sm:max-w-full min-[950px]:w-200! min-[950px]:max-w-200!"
             >
-                <PlanForm />
+                <PlanForm onSubmit={handleSubmit} />
             </Modal>
         </div>
     );

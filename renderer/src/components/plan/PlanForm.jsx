@@ -17,6 +17,8 @@ const defaultValues = {
 function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
     const form = useRef(null);
 
+    const err = useRef(null);
+
     // To save the key mapping in case the user changed the schema name
     const keyMapper = useRef(null);
 
@@ -29,16 +31,22 @@ function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
                 ...constants.DEFAULT_METADATA,
             },
         };
-        
-        const entries = Object.keys(form.current.metadata).map((k) => [k, k])
+
+        const entries = Object.keys(form.current.metadata).map((k) => [k, k]);
         // Change the key mapper
-        keyMapper.current = Object.fromEntries(entries)
+        keyMapper.current = Object.fromEntries(entries);
     }
 
     const [loading, setLoading] = useState(false);
 
     async function handleSubmit(e) {
         e.preventDefault();
+
+        // If there is an error from the metadata show it now
+        if (err.current) {
+            toast.error(err.current);
+            return;
+        }
 
         // Sanitize
         form.current.name = form.current.name?.trim();
@@ -85,6 +93,29 @@ function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
         Object.keys(form.current).map((key) => {
             if (form.current[key] !== initialValues[key])
                 toSend[key] = form.current[key];
+        });
+
+        // Lover over the metadata and replace with the map. This key will always be sent
+        Object.keys(toSend.metadata).forEach((key) => {
+            const newKey = keyMapper.current[key];
+            if (newKey === "") {
+                toast.error(
+                    "There is a schema with emtpy name, fill it or delete it",
+                );
+                throw new Error("Inavlid empty schema name");
+            }
+
+            if (newKey !== key) {
+                toSend.metadata[newKey] = structuredClone(toSend.metadata[key]);
+
+                // Remove the properties that was used by the input and form engine
+                if (toSend.metadata[newKey].deletable !== undefined)
+                    delete toSend.metadata[newKey].deletable;
+                if (toSend.metadata[newKey].focus !== undefined)
+                    delete toSend.metadata[newKey].focus;
+
+                delete toSend.metadata[key];
+            }
         });
 
         try {
@@ -157,8 +188,10 @@ function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
             </div>
 
             <PlanMetadataInputs
+                disabled={loading}
                 metadata={form.current.metadata}
                 keyMapper={keyMapper.current}
+                setError={(error) => (err.current = error)}
             />
 
             <Button

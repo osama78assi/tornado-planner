@@ -19,17 +19,27 @@ export function isValidSchemaKey(key) {
 export function sanitizeMetadata(obj) {
     Object.keys(obj).forEach((key) => {
         const trimmedKey = key.trim();
-        obj[trimmedKey] = obj[key];
+        obj[trimmedKey] = structuredClone(obj[key]);
 
         // In this case only delete the key
         if (trimmedKey.length !== key.length) delete obj[key];
 
+        console.log(
+            "\n#############\n",
+            obj[trimmedKey]?.values,
+            "\n#############\n",
+        );
+
         // If there is values then trim the values and remove duplicated values and trim the values
-        if (obj[trimmedKey]?.values && Array.isArray(obj[trimmedKey].values)) {
+        if (
+            obj[trimmedKey].type === "check" &&
+            obj[trimmedKey]?.values &&
+            Array.isArray(obj[trimmedKey].values)
+        ) {
             obj[trimmedKey].values = [
-                ...new Set(obj[trimmedKey]?.values.map((v) => v.trim())),
+                ...new Set(obj[trimmedKey]?.values.map((v) => v.trim()).filter((v) => v !== "")),
             ];
-        } else {
+        } else if (obj[trimmedKey].type === "check") {
             throw INVALID_CHECK_VALUES;
         }
     });

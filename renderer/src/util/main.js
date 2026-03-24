@@ -64,3 +64,21 @@ export function formatDate(date) {
     // There is seconds
     return `A few seconds ago`;
 }
+
+let log = 1;
+/**
+ * Pass the object and the key path to the property you want
+ * @param {Object[]} data Your data
+ * @param {string[]} fields The field you want to access [first level, second level ...]
+ * @returns {any} The data you expect
+ */
+export function takeFieldByKey(data, fields) {
+    // Be carefull when manipulate
+    let target = data;
+
+    fields.forEach((key) => {
+        target = target?.[key];
+    });
+
+    return target;
+}

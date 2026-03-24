@@ -1,5 +1,5 @@
 export async function getPlans({ page = 1, limit = 10, filters }) {
-    const res = await window.plans.get(page, limit, filters);
+    const res = await window.plans.get({ page, limit, filters });
 
     if (!res.success) {
         throw new Error(res.message);
@@ -19,7 +19,7 @@ export async function createPlan(payload) {
 }
 
 export async function updatePlan(id, payload) {
-    const res = await window.plans.update(id, payload);
+    const res = await window.plans.update({ id, payload });
 
     if (!res.success) throw new Error(res.message);
 

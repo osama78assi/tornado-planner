@@ -18,11 +18,11 @@ Note.init(
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        planId: {
+        workspaceId: {
             type: DataTypes.INTEGER,
             allowNull: true,
             references: {
-                model: "plans",
+                model: "workspaces",
                 key: "id",
             },
         },

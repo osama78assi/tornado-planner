@@ -1,6 +1,6 @@
 # Tornado Planner
 
-this is a simple application to manage all my plans on it, With Tornado planner you can manage many workspaces and plans at the same time. Note that this application isn't meant to work with team, it's peronsal planner and note keepers at the same time. With this let's list what the application can do
+this is a simple application to manage all my plans on it, With Tornado planner you can manage many workspaces and plans at the same time. Note that this application isn't meant to work with team, it's peronsal planner and notes keeper at the same time. With this let's list what the application can do
 
 # Features
 
@@ -10,7 +10,7 @@ There is two types of features that Tornado Planer provides. First one is called
 
 **1. Workspaces**
 
-You can create many workspaces, Each workspace represent a massive scope. For example you can create a workspace called Being a Fullstack developer. And at the same time you want to be a good reader so you will create another workspace called Being a Reader and so on
+You can create many workspaces, Each workspace represent a massive scope. For example you can create a workspace called Being a Fullstack developer. And at the same time you want to be a good reader so you will create another workspace called Being a Reader and so on, while you can create many notes in the workspace or in the general area and folders are supported everywhere and folders inside workspaces will not appear in the general area to make the application organization better
 
 **2. Plans**
 
@@ -47,6 +47,13 @@ But what if it can be something like this ?
 |            Number            |
 |             Date             |
 |            Check             |
+
+# Application settings
+Tornado planner provide a `setting` page to be helpful as much as possible, so I will list the available settings in the application and its purpose
+1. Mode, whether it's dark or light, maybe we will have more in the future
+2. Main color, currently orange and blue is supported
+3. Default date format, that is for quick creation
+
 
 # Notes
 

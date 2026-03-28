@@ -104,17 +104,17 @@ export async function testDate() {
         console.log("3 tasks created successfully...");
         console.log("-------------------------------");
 
-        console.log("Creating a note in each plan...");
+        console.log("Creating a note in each workspace...");
 
         const notePlan1 = await note.create({
             title: "How To Play",
             content: "it's hard to say that, But it's common and easy",
-            planId: workspace1Plan1.dataValues.id,
+            workspaceId: wrokspace1.dataValues.id,
         });
         const notePlan2 = await note.create({
             title: "What is love",
             content: "her eyes...",
-            planId: workspace2Plan2.dataValues.id,
+            workspaceId: wrokspace2.dataValues.id,
         });
 
         console.log("2 notes created successfully...");

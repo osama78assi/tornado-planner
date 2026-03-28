@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 import { connectDB } from "./config/sequelize.js";
 import { ipcMain } from "electron/main";
 import channels from "./config/channels.js";
-import { checkApplicationSettings } from "./config/main.js";
+import { checkApplicationSettings, getApplicationSettingsSync } from "./config/main.js";
 import settingServices from "./services/setting.js";
 import { testDate } from "./config/scripts.js";
 import { errorHandler } from "./util/applicationError.js";
@@ -12,8 +12,12 @@ import workspaceHandlers from "./handlers/workspace.js";
 import planServices from "./handlers/plan.js";
 import folderHandlers from "./handlers/folder.js";
 import taskHandlers from "./handlers/task.js";
-import notesHandlers from "./handlers/notes.js";
-import { DEFAULT_METADATA, DEFAULT_SCHEMA_TYPES } from "./config/constant.js";
+import notesHandlers from "./handlers/note.js";
+import {
+    getDefaultMetadata,
+    DEFAULT_SCHEMA_TYPES,
+    DATE_FORMATS,
+} from "./config/constant.js";
 
 // Global variables
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -172,13 +176,17 @@ function initNotesApi() {
 
 function initSettingsApi() {
     ipcMain.handle(channels.settings.get, async () => {
-        return await settingServices.get();
+        return getApplicationSettingsSync();
     });
 }
 
 function initConstantsApi() {
     ipcMain.handle(channels.constants.get, async () => {
-        return { DEFAULT_METADATA, DEFAULT_SCHEMA_TYPES };
+        return {
+            DEFAULT_METADATA: getDefaultMetadata(),
+            DEFAULT_SCHEMA_TYPES,
+            DATE_FORMATS,
+        };
     });
 }
 
@@ -197,12 +205,13 @@ async function main(params) {
     // Connect to database
     await connectDB();
 
-    // Add test data
-    await testDate();
     // await checkDatabaseFile();
-
+    
     // Check settings
     await checkApplicationSettings();
+
+    // Add test data
+    await testDate();
 
     // Expose all window related functions
     initWindowApi();

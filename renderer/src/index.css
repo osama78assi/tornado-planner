@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+    --scrollbar-width: 0.35rem;
+    --scrollbar-radius: 0.2rem;
+
     --main-interactive-color: #1a2f40;
     --main-interactive-color-v1: #3d9dec;
     --main-interactive-color-v2: #2383d1;
@@ -56,14 +59,14 @@
 
 /* Scrollbar styling for Electron (Webkit-based) */
 *::-webkit-scrollbar {
-    width: 0.35rem; /* slightly thicker for visibility */
+    width: var(--scrollbar-width); /* slightly thicker for visibility */
     background-color: var(--forthary-color);
-    border-radius: 0.2rem; /* rounded edges */
+    border-radius: var(--scrollbar-radius); /* rounded edges */
 }
 
 *::-webkit-scrollbar-thumb {
     background-color: var(--fifthary-color);
-    border-radius: 0.2rem;
+    border-radius: var(--scrollbar-radius);
     transition: background 0.2s ease-in-out;
 }
 
@@ -189,7 +192,7 @@
 }
 
 .sidebar_floating {
-    @apply absolute transition-all left-0 top-[40px] h-[calc(100%-40px)];
+    @apply absolute transition-all left-0 top-[40px] h-[calc(100%-40px)] z-9998;
 }
 
 .sidebar_floating_hidden {

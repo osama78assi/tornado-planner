@@ -37,6 +37,7 @@ function Dropdown({
 
         setOpen(false);
     });
+    const lockedPosition = useRef(null);
 
     // Sync the changes
     useLayoutEffect(() => {
@@ -72,14 +73,26 @@ function Dropdown({
             // If there is a space down there then render it down, otherwise render it up
             if (
                 window.innerHeight - parentPosition.bottom >
-                menuPosition.height + 10
+                Math.min(menuPosition.height, parseFloat(menuMaxHeight)) + 10
             ) {
                 menu.style.top = `${parentPosition.bottom}px`;
             } else {
-                menu.style.top = `${parentPosition.top - menuPosition.height}px`;
+                menu.style.top = `${parentPosition.top - Math.min(menuPosition.height, parseFloat(menuMaxHeight))}px`;
             }
-            menu.style.left = `${parentPosition.left}px`;
+
+            // When a scroll happen there is a problem with pixels happen so here it solved, if it happen in another thing just freez it here and reuse it
+            if (!lockedPosition.current) {
+                menu.style.left = `${parentPosition.left}px`;
+
+                lockedPosition.current = {
+                    left: parentPosition.left,
+                };
+            } else {
+                menu.style.left = `${lockedPosition.current.left}px`;
+            }
+
             menu.style.width = `${parentPosition.width}px`;
+
             menu.style.maxHeight = menuMaxHeight;
         }
 
@@ -92,6 +105,7 @@ function Dropdown({
         return () => {
             window.removeEventListener("scroll", syncSize);
             window.removeEventListener("resize", syncSize);
+            lockedPosition.current = null;
         };
     }, [open]);
 
@@ -129,7 +143,7 @@ function Dropdown({
 
         if (e.key === " " || e.key === "Enter") {
             e.preventDefault();
-            setOpen((t) => !t)
+            setOpen((t) => !t);
         }
 
         // Focus in the first option.
@@ -258,7 +272,7 @@ function Dropdown({
                 ? createPortal(
                       <div
                           {...menuOptions}
-                          className={`absolute flex flex-col cursor-pointer border border-(--main-divider-color) text-(--main-text-color) bg-(--thirdary-color) z-2 divide-y-2 divide-(--main-divider-color) overflow-auto ${menuOptions?.className ? menuOptions.className : ""}`}
+                          className={`absolute flex flex-col cursor-pointer border border-(--main-divider-color) text-(--main-text-color) bg-(--thirdary-color) z-2 divide-y-2 divide-(--main-divider-color) overflow-y-scroll ${menuOptions?.className ? menuOptions.className : ""}`}
                           ref={menuRef}
                           role="listbox"
                       >
@@ -272,7 +286,7 @@ function Dropdown({
                                       {...optionOptions}
                                       role="option"
                                       onClick={(e) => handleSelect(e, option)}
-                                      className={`${activeItem?.__id === option.__id ? "bg-(--sixary-color)" : ""} hover:bg-(--sixary-color) transition-colors ${optionOptions.className ? optionOptions.className : ""}`}
+                                      className={`${activeItem?.__id === option.__id ? "bg-(--sixary-color)" : ""} hover:bg-(--sixary-color) transition-colors ${optionOptions?.className ? optionOptions.className : ""}`}
                                       key={option.__id}
                                   >
                                       {option?.render

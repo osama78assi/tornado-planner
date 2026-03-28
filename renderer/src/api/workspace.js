@@ -1,6 +1,5 @@
 export async function getWorkspaces({ page = 1, limit = 10, filters }) {
     const res = await window.workspaces.get({ page, limit, filters });
-
     if (!res.success) {
         throw new Error(res.message);
     }

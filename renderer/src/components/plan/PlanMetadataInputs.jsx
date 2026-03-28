@@ -1,18 +1,18 @@
 import { useState } from "react";
-import constants from "../../util/constants";
+import { getConstantsSnyc } from "../../util/constants";
 import toast from "react-hot-toast";
 import Schema from "./Schema";
 import AddSchema from "./AddSchema";
-const { DEFAULT_METADATA } = constants;
-
-const defaultSchemaTitles = Object.keys(DEFAULT_METADATA);
 
 function PlanMetadataInputs({ metadata, keyMapper, disabled, setError }) {
+    // When update by reference happen we need to re-render
+    const [_, rerender] = useState(false);
+
     // Expose the data to render it
     const schemas = Object.keys(metadata);
 
-    // When update by reference happen we need to re-render
-    const [_, rerender] = useState(false);
+    const { DEFAULT_METADATA } = getConstantsSnyc();
+    const defaultSchemaTitles = Object.keys(DEFAULT_METADATA);
 
     // Each attribute in the schema will have a way of handeling
     function handleChange({ originalSchema, fromSchema, attr, value, option }) {
@@ -122,6 +122,14 @@ function PlanMetadataInputs({ metadata, keyMapper, disabled, setError }) {
                 }
 
                 rerender((t) => !t);
+                break;
+            case "format":
+                if (option === "-x") {
+                    metadata[originalSchema].format = value;
+                } else if (option === "-d") {
+                    delete metadata[originalSchema].format;
+                }
+
                 break;
         }
 

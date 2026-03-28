@@ -1,3 +1,6 @@
+// Application settings
+let settings = null;
+
 export function getDayStatus() {
     const now = new Date();
 
@@ -35,6 +38,13 @@ export function throttleSearch(fn) {
     };
 }
 
+// This is usefull when you want to format a date by a default format from the backend, check main/config/constants.js
+export function formateDateBy(date, format) {
+    return new Intl.DateTimeFormat(format.locales, {
+        ...format,
+    }).format(new Date(date));
+}
+
 export function formatDate(date) {
     const now = new Date();
     const diff = {
@@ -65,7 +75,6 @@ export function formatDate(date) {
     return `A few seconds ago`;
 }
 
-let log = 1;
 /**
  * Pass the object and the key path to the property you want
  * @param {Object[]} data Your data
@@ -81,4 +90,24 @@ export function takeFieldByKey(data, fields) {
     });
 
     return target;
+}
+
+export async function getSettings() {
+    try {
+        if (settings) return settings;
+
+        settings = await window.settings.get();
+
+        return settings;
+    } catch (err) {
+        throw err;
+    }
+}
+
+export function getSettingsSync() {
+    if (settings === null) {
+        throw new Error("The settings isn't fetched yet");
+    }
+
+    return settings;
 }

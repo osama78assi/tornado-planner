@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import constants from "../../util/constants";
+import { getConstantsSnyc } from "../../util/constants";
 import Button from "../ui/Button";
 import Dropdown from "../ui/Dropdown";
 import Input from "../ui/Input";
@@ -8,13 +8,7 @@ import { IoMdAddCircleOutline } from "react-icons/io";
 import { IoTrashOutline } from "react-icons/io5";
 import { validate } from "uuid";
 import { FiX } from "react-icons/fi";
-
-const { DEFAULT_SCHEMA_TYPES } = constants;
-const schemaTypes = DEFAULT_SCHEMA_TYPES.map((type) => ({
-    value: type,
-    label: type === "string" ? "text" : type,
-    id: type,
-}));
+import { formateDateBy, getSettingsSync } from "../../util/main";
 
 function Schema({
     name,
@@ -50,6 +44,25 @@ function Schema({
             blur?.();
         }
     }, []);
+
+    const { DEFAULT_SCHEMA_TYPES, DATE_FORMATS } = getConstantsSnyc();
+    const schemaTypes = DEFAULT_SCHEMA_TYPES.map((type) => ({
+        value: type,
+        label: type === "string" ? "text" : type,
+        id: type,
+    }));
+
+    // Get the user preferred date format
+    const { dateFormat: preferredFormat } = getSettingsSync();
+
+    const dateFormats = Object.keys(DATE_FORMATS).map((key) => ({
+        label: formateDateBy(
+            new Date(2020, 2, 19, 14, 20, 20),
+            DATE_FORMATS[key],
+        ),
+        value: key,
+        ...(key === preferredFormat ? { active: true } : {}),
+    }));
 
     return (
         <div
@@ -128,6 +141,24 @@ function Schema({
                                 attr: "type",
                                 value: type.value,
                             });
+                            if (type.value === "date") {
+                                console.log("why ?");
+                                onChange?.({
+                                    originalSchema: name,
+                                    fromSchema: oldSchemaName.current,
+                                    value: preferredFormat, // Send the format form the settings
+                                    attr: "format",
+                                    option: "-x", // Upsert (update or insert)
+                                });
+                            } else {
+                                onChange?.({
+                                    originalSchema: name,
+                                    fromSchema: oldSchemaName.current,
+                                    value: preferredFormat, // Send the format form the settings
+                                    attr: "format",
+                                    option: "-d", // Delete
+                                });
+                            }
                             forceClose();
                         }}
                         className={`basis-full! w-full! h-10! rounded-lg disabled:grayscale-[1]`}
@@ -137,26 +168,158 @@ function Schema({
                     />
                 </div>
 
-                <div className="flex flex-col gap-2 w-full! min-[950px]:basis-[calc((1/3)*100%-0.5rem)]!">
-                    <label htmlFor={`${name}-values`} className="h-[1.4rem]">
-                        Enter values for your field
-                    </label>
-                    <Input.InputwithActions
-                        parentProps={{
-                            className:
-                                "rounded-lg! w-full! h-10! disabled:graysacle-[1]",
-                        }}
-                        inputProps={{
-                            ref: checkInputRef,
-                            id: `${name}-values`,
-                            onKeyDown: (e) => {
-                                const input = checkInputRef.current;
+                {/* Type isn't date render this and disable it */}
+                {type !== "date" ? (
+                    <CheckInput
+                        name={name}
+                        checkInputRef={checkInputRef}
+                        oldSchemaName={oldSchemaName}
+                        disabled={disabled}
+                        type={type}
+                        onChange={onChange}
+                        values={values}
+                    />
+                ) : null}
 
-                                if (e.key === "Enter" && input) {
+                {/* Type is date then render the format settings */}
+                {type === "date" ? (
+                    <div className="flex flex-col gap-2 w-full! min-[950px]:basis-[calc((1/3)*100%-0.5rem)]!">
+                        <label
+                            htmlFor={`${name}-values`}
+                            className="h-[1.4rem]"
+                        >
+                            Select the date format
+                        </label>
+                        <Dropdown
+                            className="rounded-lg! px-4! py-2!"
+                            options={dateFormats}
+                            label="Select format"
+                            optionOptions={{ className: "p-3" }}
+                            onSelect={(option, _, forceClose) => {
+                                onChange?.({
+                                    originalSchema: name,
+                                    fromSchema: oldSchemaName.current,
+                                    value: option.value,
+                                    attr: "format",
+                                    option: "-x", // Upsert (update or insert)
+                                });
+                                forceClose();
+                            }}
+                        />
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function CheckInput({
+    name,
+    checkInputRef,
+    oldSchemaName,
+    disabled,
+    type,
+    onChange,
+    values,
+}) {
+    return (
+        <div className="flex flex-col gap-2 w-full! min-[950px]:basis-[calc((1/3)*100%-0.5rem)]!">
+            <label htmlFor={`${name}-values`} className="h-[1.4rem]">
+                Enter values for your field
+            </label>
+            <Input.InputwithActions
+                parentProps={{
+                    className:
+                        "rounded-lg! w-full! h-10! disabled:graysacle-[1]",
+                }}
+                inputProps={{
+                    ref: checkInputRef,
+                    id: `${name}-values`,
+                    onKeyDown: (e) => {
+                        const input = checkInputRef.current;
+
+                        if (e.key === "Enter" && input) {
+                            if (onChange) {
+                                onChange?.({
+                                    originalSchema: name,
+                                    fromSchema: oldSchemaName.current,
+                                    attr: "values",
+                                    value: input.value,
+                                    option: "-a", // -a -> add
+                                });
+                                // Clear in case passed
+                                input.value = null;
+                            }
+                            e.preventDefault();
+                        }
+                    },
+                }}
+                disabled={disabled || type !== "check"}
+                actions={
+                    <div className="flex">
+                        <Dropdown
+                            openBtn={
+                                <Button
+                                    disabled={disabled || type !== "check"}
+                                    handleClick={(e) => {
+                                        // Don't submit the form
+                                        e.preventDefault();
+                                    }}
+                                    className="rounded-none! rounded-s-lg!"
+                                >
+                                    <FaEye />
+                                </Button>
+                            }
+                            disabled={disabled || type !== "check"}
+                            menuOptions={{
+                                className: "max-w-[30rem]! w-[20rem]!",
+                            }}
+                            optionOptions={{
+                                className:
+                                    "flex justify-between p-1 cursor-auto transition-colors hover:bg-(--forthary-color)",
+                            }}
+                            options={values?.map((val) => ({
+                                label: val,
+                                value: val,
+                                render: (option) => {
+                                    return (
+                                        <>
+                                            <p>{option.label}</p>
+                                            <button
+                                                className="transition-colors hover:text-red-500 cursor-pointer p-1"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onChange?.({
+                                                        originalSchema: name,
+                                                        fromSchema:
+                                                            oldSchemaName.current,
+                                                        attr: "values",
+                                                        value: option.value,
+                                                        option: "-d",
+                                                    }); // -d -> delete
+                                                }}
+                                            >
+                                                <IoTrashOutline />
+                                            </button>
+                                        </>
+                                    );
+                                },
+                            }))}
+                            className="rounded-none! p-0!"
+                        />
+
+                        <Button
+                            disabled={disabled || type !== "check"}
+                            tabIndex={disabled ? -1 : 0}
+                            className="rounded-none!"
+                            handleClick={(e) => {
+                                // Take the value from the input if exists and send it then clear the input
+                                const input = checkInputRef.current;
+                                if (input) {
                                     if (onChange) {
                                         onChange?.({
                                             originalSchema: name,
-                                            fromSchema: oldSchemaName.current,
+                                            name: oldSchemaName.current,
                                             attr: "values",
                                             value: input.value,
                                             option: "-a", // -a -> add
@@ -164,98 +327,16 @@ function Schema({
                                         // Clear in case passed
                                         input.value = null;
                                     }
-                                    e.preventDefault();
                                 }
-                            },
-                        }}
-                        disabled={disabled || type !== "check"}
-                        actions={
-                            <div className="flex">
-                                <Dropdown
-                                    openBtn={
-                                        <Button
-                                            disabled={
-                                                disabled || type !== "check"
-                                            }
-                                            handleClick={(e) => {
-                                                // Don't submit the form
-                                                e.preventDefault();
-                                            }}
-                                            className="rounded-none! rounded-s-lg!"
-                                        >
-                                            <FaEye />
-                                        </Button>
-                                    }
-                                    disabled={disabled || type !== "check"}
-                                    menuOptions={{
-                                        className: "max-w-[30rem]! w-[20rem]!",
-                                    }}
-                                    optionOptions={{
-                                        className:
-                                            "flex justify-between p-1 cursor-auto transition-colors hover:bg-(--forthary-color)",
-                                    }}
-                                    options={values?.map((val) => ({
-                                        label: val,
-                                        value: val,
-                                        render: (option) => {
-                                            return (
-                                                <>
-                                                    <p>{option.label}</p>
-                                                    <button
-                                                        className="transition-colors hover:text-red-500 cursor-pointer p-1"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onChange?.({
-                                                                originalSchema:
-                                                                    name,
-                                                                fromSchema:
-                                                                    oldSchemaName.current,
-                                                                attr: "values",
-                                                                value: option.value,
-                                                                option: "-d",
-                                                            }); // -d -> delete
-                                                        }}
-                                                    >
-                                                        <IoTrashOutline />
-                                                    </button>
-                                                </>
-                                            );
-                                        },
-                                    }))}
-                                    className="rounded-none! p-0!"
-                                />
 
-                                <Button
-                                    disabled={disabled || type !== "check"}
-                                    tabIndex={disabled ? -1 : 0}
-                                    className="rounded-none!"
-                                    handleClick={(e) => {
-                                        // Take the value from the input if exists and send it then clear the input
-                                        const input = checkInputRef.current;
-                                        if (input) {
-                                            if (onChange) {
-                                                onChange?.({
-                                                    originalSchema: name,
-                                                    name: oldSchemaName.current,
-                                                    attr: "values",
-                                                    value: input.value,
-                                                    option: "-a", // -a -> add
-                                                });
-                                                // Clear in case passed
-                                                input.value = null;
-                                            }
-                                        }
-
-                                        e.preventDefault();
-                                    }}
-                                >
-                                    <IoMdAddCircleOutline />
-                                </Button>
-                            </div>
-                        }
-                    />
-                </div>
-            </div>
+                                e.preventDefault();
+                            }}
+                        >
+                            <IoMdAddCircleOutline />
+                        </Button>
+                    </div>
+                }
+            />
         </div>
     );
 }

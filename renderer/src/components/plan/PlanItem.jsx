@@ -6,6 +6,7 @@ import { FaEdit } from "react-icons/fa";
 import Modal from "../ui/Modal";
 import PlanForm from "./PlanForm";
 import { updatePlan } from "../../api/plan";
+import toast from "react-hot-toast";
 
 function PlanItem({ updateData, plan }) {
     const location = useLocation();
@@ -13,7 +14,6 @@ function PlanItem({ updateData, plan }) {
     const [isOpen, setIsOpen] = useState(false);
 
     function handleClick() {
-        console.log(location);
         nav(`${location.pathname}/${plan.id}`);
     }
 

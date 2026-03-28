@@ -33,7 +33,7 @@ function PlanP() {
                 setLoadingPlan(true);
                 const {
                     data: [plan],
-                } = await getPlans({});
+                } = await getPlans({ filters: { id: planId } });
 
                 setPlan(plan);
                 console.log("\n#############\n", plan, "\n#############\n");

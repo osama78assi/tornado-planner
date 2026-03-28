@@ -1,6 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
 import Plan from "./plan.js";
+import Note from "./note.js";
 
 class Workspace extends Model {}
 
@@ -52,6 +53,19 @@ Workspace.init(
     },
 );
 
+// Each workspace have many notes
+Workspace.hasMany(Note, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "notes",
+    foreignKey: "workspaceId",
+});
+Note.belongsTo(Workspace, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    as: "workspace",
+    foreignKey: "workspaceId",
+});
 // Each workspace have many plans
 Workspace.hasMany(Plan, {
     onDelete: "CASCADE",

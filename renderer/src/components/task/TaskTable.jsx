@@ -37,8 +37,6 @@ function TasksTable({ columns, data }) {
         styleMapper[col.__id] = col.columnStyle;
     });
 
-    console.log("\n#############\n", data, "\n#############\n");
-
     return (
         <div className="tasktable-container">
             <table className="tasktable">

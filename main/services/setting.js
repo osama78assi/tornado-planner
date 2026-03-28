@@ -28,7 +28,7 @@ class SettingServices {
         try {
             const data = await Setting.findAll();
 
-            return data?.[0]?.toJSON() || null;
+            return data?.[0] || null;
         } catch (err) {
             throw err;
         }

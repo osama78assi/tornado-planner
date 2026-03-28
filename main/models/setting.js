@@ -1,3 +1,4 @@
+import { DATE_FORMATS } from "../config/constant.js";
 import sequelize from "../config/sequelize.js";
 import { Model, DataTypes } from "sequelize";
 
@@ -11,9 +12,15 @@ Setting.init(
         },
         theme: {
             type: DataTypes.ENUM("light", "dark"),
+            defaultValue: "dark"
         },
-        pallete: {
+        color: {
             type: DataTypes.ENUM("blue", "orange"),
+            defaultValue: "blue"
+        },
+        dateFormat: {
+            type: DataTypes.ENUM(Object.keys(DATE_FORMATS)),
+            defaultValue: Object.keys(DATE_FORMATS)[0],
         },
     },
     {

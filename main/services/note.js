@@ -1,7 +1,6 @@
 import { NOTE_NOT_EXIST } from "../errors/note.js";
 import Folder from "../models/folder.js";
 import Note from "../models/note.js";
-import Plan from "../models/plan.js";
 import Workspace from "../models/workspaces.js";
 import ApplicationError from "../util/applicationError.js";
 import { getSafeLimit, mapFilters } from "../util/global.js";
@@ -125,16 +124,9 @@ class NoteServices {
                         as: "folder",
                     },
                     {
-                        model: Plan,
-                        as: "plan",
+                        model: Workspace,
+                        as: "workspace",
                         attributes: ["id", "name"],
-                        include: [
-                            {
-                                attributes: ["id", "name"],
-                                model: Workspace,
-                                as: "workspace",
-                            },
-                        ],
                     },
                 ],
             });

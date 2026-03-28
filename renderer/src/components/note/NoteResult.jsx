@@ -7,7 +7,7 @@ function NoteResult({ note, query }) {
     return (
         <div className="p-2 bg-(--thirdary-color) rounded-lg">
             <div className="border-b border-b-(--main-divider-color)">
-                {note?.folder ? (
+                {note?.folder && note?.workspace === null ? (
                     <Breadcrumbs
                         wrap={true}
                         items={[
@@ -29,7 +29,7 @@ function NoteResult({ note, query }) {
                     />
                 ) : null}
 
-                {note?.plan ? (
+                {note?.workspace ? (
                     <Breadcrumbs
                         wrap={true}
                         items={[
@@ -38,9 +38,9 @@ function NoteResult({ note, query }) {
                                     size="1.4rem"
                                     color="var(--main-interactive-color-v1)"
                                 />
-                                <span>{note?.plan?.workspace?.name}</span>
+                                <span>{note?.workspace?.name}</span>
                             </div>,
-                            note?.plan?.name,
+                            note?.workspace?.name,
 
                             <HighlightSearch
                                 str={note?.title}

@@ -5,9 +5,13 @@ import {
     INVALID_SCHEMA_VALUES,
     MISSING_ATTR_TYPE,
     INVALID_SCHEMA_VALUES_USAGE,
-    INVALID_CHECK_VALUES,
+    INVALID_DATE_FORMAT,
 } from "../errors/global.js";
 import ApplicationError from "../util/applicationError.js";
+import {
+    checkApplicationSettings,
+    getApplicationSettingsSync,
+} from "./main.js";
 
 // We should use this to check the user defined schemas
 export function isValidSchemaKey(key) {
@@ -24,12 +28,6 @@ export function sanitizeMetadata(obj) {
         // In this case only delete the key
         if (trimmedKey.length !== key.length) delete obj[key];
 
-        console.log(
-            "\n#############\n",
-            obj[trimmedKey]?.values,
-            "\n#############\n",
-        );
-
         // If there is values then trim the values and remove duplicated values and trim the values
         if (
             obj[trimmedKey].type === "check" &&
@@ -37,10 +35,12 @@ export function sanitizeMetadata(obj) {
             Array.isArray(obj[trimmedKey].values)
         ) {
             obj[trimmedKey].values = [
-                ...new Set(obj[trimmedKey]?.values.map((v) => v.trim()).filter((v) => v !== "")),
+                ...new Set(
+                    obj[trimmedKey]?.values
+                        .map((v) => v.trim())
+                        .filter((v) => v !== ""),
+                ),
             ];
-        } else if (obj[trimmedKey].type === "check") {
-            throw INVALID_CHECK_VALUES;
         }
     });
 }
@@ -49,24 +49,28 @@ export function isValidSchema(obj, key) {
     // Check if the key is acceptable or not. This key is the column name
     isValidSchemaKey(key);
 
-    // Define is required valid or not
-    let isRequiredValid = false;
+    const flags = {
+        // Define is required valid or not
+        isRequiredValid: false,
 
-    // Define is optional valid or not
-    let isOptionaValid = true;
+        // Define is optional valid or not
+        isValuesArrValid: true,
 
-    // Define a rule to not add more attributes
-    let isThereExtra = false;
+        // Define a rule to not add more attributes
+        isThereExtra: false,
 
-    // Only type check accept values
-    let incorrectValuesUse = false;
+        // Only type check accept values
+        incorrectValuesUse: false,
 
+        // Check if the date's format is valid or not
+        isDateFormatValid: true,
+    };
     for (let key of Object.keys(obj)) {
         // Check required attributes
         if (key === "type") {
             // Check the values it must equal to
             if (["date", "string", "number", "check"].includes(obj.type)) {
-                isRequiredValid = true;
+                flags.isRequiredValid = true;
             }
         } else if (key === "values") {
             // Check if the values of type array
@@ -76,32 +80,39 @@ export function isValidSchema(obj, key) {
                 obj.values.length > 20
             ) {
                 // No longer valid
-                isOptionaValid = false;
+                flags.isValuesArrValid = false;
             }
 
             if (obj?.type !== "check") {
-                incorrectValuesUse = true;
+                flags.incorrectValuesUse = true;
             }
+        } else if (key === "format") {
+            // Check if the format is known
+            if (!DATE_FORMATS[obj.format]) flags.isDateFormatValid = false;
         } else {
             // If reached this block that's mean there is unrecognized attribute
-            isThereExtra = true;
+            flags.isThereExtra = true;
         }
     }
 
     // Throw errors accordingly
-    if (!isRequiredValid) {
+    if (!flags.isRequiredValid) {
         throw INVALID_SCHEMA_TYPE(key);
     }
 
-    if (!isOptionaValid) {
+    if (!flags.isValuesArrValid) {
         throw INVALID_SCHEMA_VALUES(key);
     }
 
-    if (incorrectValuesUse) {
+    if (!flags.isDateFormatValid) {
+        throw INVALID_DATE_FORMAT(key);
+    }
+
+    if (flags.incorrectValuesUse) {
         throw INVALID_SCHEMA_VALUES_USAGE(key);
     }
 
-    if (isThereExtra) {
+    if (flags.isThereExtra) {
         throw INVALID_SCHEMA_ATTR(key);
     }
 }
@@ -154,15 +165,27 @@ export function isValidValue(metadataAttr, value) {
     }
 }
 
-export function DEFAULT_SCHEMA(key) {
+// Take the user schema to extract the optional attributes if passed
+export function DEFAULT_SCHEMA(key, userSchema) {
+    const settings = getApplicationSettingsSync();
+    console.log('\n#############\n', userSchema, '\n#############\n');
+
     switch (key) {
         case "start date":
             return {
                 type: "date",
+                format:
+                    (userSchema?.format ?? null)
+                        ? userSchema.format
+                        : settings.dateFormat,
             };
         case "end date":
             return {
                 type: "date",
+                format:
+                    (userSchema?.format ?? null)
+                        ? userSchema.format
+                        : settings.dateFormat,
             };
         case "status":
             return {
@@ -177,20 +200,83 @@ export function DEFAULT_SCHEMA(key) {
     }
 }
 
-export const DEFAULT_METADATA = {
-    "start date": {
-        type: "date",
+export function getDefaultMetadata() {
+    const settings = getApplicationSettingsSync();
+
+    return {
+        "start date": {
+            type: "date",
+            format: settings.dateFormat,
+        },
+        "end date": {
+            type: "date",
+            format: settings.dateFormat,
+        },
+        status: {
+            type: "check",
+            values: ["done", "in progress", "not started", "discarded"],
+        },
+        priority: {
+            type: "check",
+            values: ["low", "medium", "high"],
+        },
+    };
+}
+
+export const DATE_FORMATS = {
+    // DD/MM/YYYY
+    ddmmyyyy_12h: {
+        locales: "en-GB",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
     },
-    "end date": {
-        type: "date",
+    ddmmyyyy_24h: {
+        locales: "en-GB",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
     },
-    status: {
-        type: "check",
-        values: ["done", "in progress", "not started", "discarded"],
+
+    ddmmyyyy: {
+        locales: "en-GB",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
     },
-    priority: {
-        type: "check",
-        values: ["low", "medium", "high"],
+
+    // MM/DD/YYYY
+    mmddyyyy_12h: {
+        locales: "en-US",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    },
+
+    mmddyyyy_24h: {
+        locales: "en-US",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    },
+
+    mmddyyyy: {
+        locales: "en-US",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
     },
 };
 

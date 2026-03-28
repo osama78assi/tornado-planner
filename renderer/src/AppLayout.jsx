@@ -8,7 +8,7 @@ import {
 import { FiX, FiMinus } from "react-icons/fi";
 import { FaRegWindowMaximize, FaRegWindowRestore } from "react-icons/fa";
 import { useLayoutEffect, useState } from "react";
-import { getSettings } from "./serivces/setting";
+import { getSettingsSync } from "./util/main";
 import { Toaster } from "react-hot-toast";
 import MainProvider from "./components/ui/MainProvider";
 
@@ -41,8 +41,7 @@ function AppLayout() {
     useLayoutEffect(() => {
         async function setTheme() {
             try {
-                const settings = await getSettings();
-
+                const settings = getSettingsSync();
                 // Add the correct class to the dom
                 switch (settings.theme) {
                     case "light":

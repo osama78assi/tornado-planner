@@ -14,6 +14,7 @@ import taskServices from "./task.js";
 
 class PlanServices {
     async create(details) {
+        // Mental model: sanitize ----> add/replace default metadata ----> validate metadata
         try {
             // Check if the metadata is provided or not
             if (!details.metadata) {
@@ -26,7 +27,7 @@ class PlanServices {
             // If the user sent any key from the required schema then delete it and take the one from the backend
             REQUIRED_SCHEMAS.forEach((key) => {
                 // Copy that schema even if it's not exist
-                details.metadata[key] = DEFAULT_SCHEMA(key);
+                details.metadata[key] = DEFAULT_SCHEMA(key, details.metadata[key]);
             });
 
             // Loop over the metadata and validate each schema on it
@@ -40,6 +41,8 @@ class PlanServices {
 
             // Everything is correct then go for it
             const plan = await Plan.create(details);
+
+            console.log('\n##### check now ########\n', plan.dataValues, '\n#############\n');
 
             return plan;
         } catch (err) {

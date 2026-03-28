@@ -61,7 +61,7 @@ function Search() {
                     // Clear the search
                     setSearchQ("");
                 }}
-                className="bg-(--main-color)! sm:w-130!"
+                className="bg-(--main-color)! sm:w-180!"
             >
                 <div className="bg-(--main-color) h-[65dvh] overflow-auto w-full px-3 pt-3">
                     <Input.InputIcon

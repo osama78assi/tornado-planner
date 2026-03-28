@@ -24,8 +24,6 @@ export const searchTasks = throttleSearch(async function ({
 export async function getTasks({ limit, filters, page }) {
     const res = await window.tasks.get({ limit, filters, page });
 
-    console.log("\n#############\n", res, "\n#############\n");
-
     if (!res.success) {
         throw new Error(res.message);
     }

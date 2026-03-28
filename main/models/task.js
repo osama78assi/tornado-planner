@@ -1,5 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
+import Attribute from "./attribute.js";
+import Value from "./value.js";
 
 class Task extends Model {}
 
@@ -82,5 +84,15 @@ Task.init(
         },
     },
 );
+
+// The task got an attribute through a value
+Task.belongsToMany(Attribute, {
+    through: Value,
+    as: "metadata_v1",
+    foreignKey: "taskId",
+    otherKey: "attributeId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+});
 
 export default Task;

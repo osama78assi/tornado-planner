@@ -35,6 +35,13 @@ export const INVALID_SCHEMA_ATTR = (schema) =>
         attributes: { schema },
     });
 
+export const INVALID_DATE_FORMAT = (schema) =>
+    new ApplicationError({
+        message: `Attribute 'format', date format isn't recognized in the schema ${schema}`,
+        code: "INVALID_DATE_FORMAT",
+        attributes: { schema },
+    });
+
 export const MISSING_ATTR_TYPE = new ApplicationError({
     message: "The 'type' attribute isn't exists",
     code: "MISSING_ATTR_TYPE",
@@ -50,7 +57,7 @@ export const INVALID_PAGINATION_LIMIT = new ApplicationError({
     code: "INVALID_PAGINATION_LIMIT",
 });
 
-export const INVALID_CHECK_VALUES = new ApplicationError({
-    message: "The check values must be an array",
-    code: "INVALID_CHECK_VALUES",
+export const UNINITIALIZED_SETTINGS = new ApplicationError({
+    message: "Settings not initialized",
+    code: "UNINITIALIZED_SETTINGS",
 });

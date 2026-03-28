@@ -75,8 +75,6 @@ class WorkspaceServices {
 
             // Calculate the remaining pages
             const pages = Math.ceil(count / limit);
-            console.log("\n#############\n", pages, "\n#############\n");
-
             return {
                 data,
                 pagination: { pages, count },

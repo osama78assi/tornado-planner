@@ -1,6 +1,7 @@
 import { errorHandler } from "../util/applicationError.js";
 import planServices from "../services/plan.js";
 import { checkPagination } from "../util/global.js";
+import { checkApplicationSettings } from "../config/main.js";
 
 class PlanHandlers {
     async create(payload) {

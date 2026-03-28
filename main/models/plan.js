@@ -1,7 +1,9 @@
 import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
-import Note from "./note.js";
+
 import Task from "./task.js";
+import Attribute from "./attribute.js";
+import PlanAttribute from "./planAttributes.js";
 
 class Plan extends Model {}
 
@@ -42,7 +44,7 @@ Plan.init(
         },
         archivedAt: {
             type: DataTypes.DATE,
-            allowNull: true
+            allowNull: true,
         },
     },
     {
@@ -81,20 +83,6 @@ Plan.init(
     },
 );
 
-// Each plan have many notes
-Plan.hasMany(Note, {
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-    as: "notes",
-    foreignKey: "planId",
-});
-Note.belongsTo(Plan, {
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-    as: "plan",
-    foreignKey: "planId",
-});
-
 // Each plan have many tasks
 Plan.hasMany(Task, {
     onDelete: "CASCADE",
@@ -107,6 +95,16 @@ Task.belongsTo(Plan, {
     onUpdate: "CASCADE",
     as: "plan",
     foreignKey: "planId",
+});
+
+// Plan has many attributes (metadata)
+Plan.belongsToMany(Attribute, {
+    through: PlanAttribute,
+    as: "metadata_v1",
+    foreignKey: "planId",
+    otherKey: "attributeId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
 });
 
 export default Plan;

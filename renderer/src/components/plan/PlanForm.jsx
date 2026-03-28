@@ -3,7 +3,7 @@ import Input from "../ui/Input";
 import IconPicker from "../ui/IconPicker";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
-import constants from "../../util/constants";
+import {getConstantsSnyc} from "../../util/constants";
 import PlanMetadataInputs from "./PlanMetadataInputs";
 
 const defaultValues = {
@@ -28,7 +28,7 @@ function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
             ...initialValues,
             metadata: {
                 ...initialValues.metadata,
-                ...constants.DEFAULT_METADATA,
+                ...getConstantsSnyc().DEFAULT_METADATA,
             },
         };
 

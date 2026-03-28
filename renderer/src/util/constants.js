@@ -1,12 +1,19 @@
 let constants = null;
 
-await (async function getConstants() {
+export async function getConstants() {
     // Check the cached
-    if (!constants) {
-        constants = await window.constants.get();
-    }
+    if (constants) return constants;
+
+    constants = await window.constants.get();
 
     // Normal return
     return constants;
-})();
-export default constants;
+}
+
+export function getConstantsSnyc() {
+    if(!constants) {
+        throw new Error("The constants hasn't been fetched yet")
+    }
+
+    return constants
+}

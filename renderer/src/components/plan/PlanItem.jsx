@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatDate } from "../../util/main";
 import Icon from "../ui/Icon";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import Modal from "../ui/Modal";
 import PlanForm from "./PlanForm";
@@ -12,6 +12,7 @@ function PlanItem({ updateData, plan }) {
     const location = useLocation();
     const nav = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
+    const keyMapper = useRef(undefined);
 
     function handleClick() {
         nav(`${location.pathname}/${plan.id}`);
@@ -19,7 +20,8 @@ function PlanItem({ updateData, plan }) {
 
     async function handleUpdatePlan(payload) {
         try {
-            const updatedPlan = await updatePlan(plan.id, payload);
+            // Send the map between old and new keys too
+            const updatedPlan = await updatePlan(plan.id, payload, keyMapper?.current);
 
             updateData((data) =>
                 data.map((curPlan) =>
@@ -90,6 +92,7 @@ function PlanItem({ updateData, plan }) {
                             icon: plan.icon,
                             metadata: plan.metadata,
                         }}
+                        mapSetter={(map) => (keyMapper.current = map)}
                         onSubmit={handleUpdatePlan}
                         update={true}
                     />

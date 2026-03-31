@@ -13,18 +13,14 @@ Task.init(
             primaryKey: true,
         },
         title: {
-            type: DataTypes.STRING(150),
+            type: DataTypes.STRING(300),
             allowNull: false,
         },
         description: {
-            type: DataTypes.STRING(300),
+            type: DataTypes.STRING(600),
             allowNull: true,
         },
         icon: {
-            type: DataTypes.STRING(100),
-            allowNull: true,
-        },
-        style: {
             type: DataTypes.STRING(100),
             allowNull: true,
         },
@@ -33,7 +29,7 @@ Task.init(
             allowNull: false,
         },
         planId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             allowNull: false,
             references: {
                 model: "plans",
@@ -41,7 +37,7 @@ Task.init(
             },
         },
         folderId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             allowNull: true,
             references: {
                 model: "folders",
@@ -88,6 +84,7 @@ Task.init(
 // The task got an attribute through a value
 Task.belongsToMany(Attribute, {
     through: Value,
+    // [label]
     as: "metadata_v1",
     foreignKey: "taskId",
     otherKey: "attributeId",

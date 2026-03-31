@@ -34,9 +34,9 @@ class PlanHandlers {
         }
     }
 
-    async update(id, payload) {
+    async update(id, payload, keyMapper) {
         try {
-            const results = await planServices.update(id, payload);
+            const results = await planServices.update(id, payload, keyMapper);
 
             return {
                 success: true,

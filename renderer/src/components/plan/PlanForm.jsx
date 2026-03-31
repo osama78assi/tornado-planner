@@ -3,7 +3,7 @@ import Input from "../ui/Input";
 import IconPicker from "../ui/IconPicker";
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
-import {getConstantsSnyc} from "../../util/constants";
+import { getConstantsSnyc } from "../../util/constants";
 import PlanMetadataInputs from "./PlanMetadataInputs";
 
 const defaultValues = {
@@ -14,7 +14,12 @@ const defaultValues = {
     isArchieved: null,
 };
 
-function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
+function PlanForm({
+    onSubmit,
+    initialValues = defaultValues,
+    mapSetter,
+    update = false,
+}) {
     const form = useRef(null);
 
     const err = useRef(null);
@@ -95,6 +100,9 @@ function PlanForm({ onSubmit, initialValues = defaultValues, update = false }) {
                 toSend[key] = form.current[key];
         });
 
+        // Save the map and send it to parent in case it's update operation so you know what have changed
+        mapSetter?.(keyMapper.current);
+        
         // Lover over the metadata and replace with the map. This key will always be sent
         Object.keys(toSend.metadata).forEach((key) => {
             const newKey = keyMapper.current[key];

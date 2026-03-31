@@ -11,10 +11,14 @@ import Plan from "../models/plan.js";
 import ApplicationError from "../util/applicationError.js";
 import { getSafeLimit, mapFilters } from "../util/global.js";
 import taskServices from "./task.js";
+import metadataServices from "./metadata.js";
+import PlanAttribute from "../models/planAttributes.js";
+import Attribute from "../models/attribute.js";
 
 class PlanServices {
     async create(details) {
-        // Mental model: sanitize ----> add/replace default metadata ----> validate metadata
+        // Mental model: sanitize ----> add/replace default metadata ----> validate metadata ----> Create/update attributes and link them
+        const transaction = await sequelize.transaction();
         try {
             // Check if the metadata is provided or not
             if (!details.metadata) {
@@ -27,22 +31,44 @@ class PlanServices {
             // If the user sent any key from the required schema then delete it and take the one from the backend
             REQUIRED_SCHEMAS.forEach((key) => {
                 // Copy that schema even if it's not exist
-                details.metadata[key] = DEFAULT_SCHEMA(key, details.metadata[key]);
+                details.metadata[key] = DEFAULT_SCHEMA(
+                    key,
+                    details.metadata[key],
+                );
             });
 
+            const attrs = [];
             // Loop over the metadata and validate each schema on it
             Object.keys(details.metadata).map((key) => {
                 try {
                     isValidSchema(details.metadata[key], key);
+
+                    // If valid add that to the attributes array
+                    attrs.push({ key, type: details.metadata[key].type });
                 } catch (err) {
                     throw err;
                 }
             });
 
-            // Everything is correct then go for it
-            const plan = await Plan.create(details);
+            // Update/create the attributes
+            const attributeIds = await metadataServices.upsert({
+                attributes: attrs,
+                transaction,
+            });
 
-            console.log('\n##### check now ########\n', plan.dataValues, '\n#############\n');
+            // Everything is correct then go for it
+            const plan = await Plan.create(details, { transaction });
+
+            // Link them
+            await PlanAttribute.bulkCreate(
+                attributeIds.map((attr) => ({
+                    attributeId: attr.id,
+                    planId: plan.id,
+                })),
+                { transaction },
+            );
+
+            await transaction.commit();
 
             return plan;
         } catch (err) {
@@ -50,11 +76,17 @@ class PlanServices {
                 console.log(err);
             }
 
+            await transaction.rollback();
+
             throw err;
         }
     }
 
     async update(id, payload, mapping = {}) {
+        // Mental model:
+        // sanitize metadata -> add/update default metadata
+        // -> prepare differnciation object -> update / delete / add the attributes
+        // -> update tasks relation / delete tasks values
         // Start transaction
         const t = await sequelize.transaction();
         try {
@@ -71,7 +103,10 @@ class PlanServices {
                 // If the user sent any key from the required schema then delete it and take the one from the backend
                 REQUIRED_SCHEMAS.forEach((key) => {
                     // Copy that schema even if it's not exist
-                    payload.metadata[key] = DEFAULT_SCHEMA(key);
+                    payload.metadata[key] = DEFAULT_SCHEMA(
+                        key,
+                        payload.metadata[key],
+                    );
                 });
 
                 // Loop over the metadata and validate each schema on it
@@ -86,6 +121,22 @@ class PlanServices {
                 // Get the old metadata and specify each field by a case
                 const plan = await Plan.findByPk(id, {
                     attributes: ["metadata"],
+                    include: [
+                        {
+                            model: Attribute,
+                            // [label]
+                            as: "attrs",
+                            through: {
+                                attributes: [], // removes junction table data
+                            },
+                        },
+                    ],
+                });
+
+                // Build the map between attribute keys and ids, this will be unique across the individual plan
+                const attrsMap = {};
+                plan.attrs.forEach((attr) => {
+                    attrsMap[attr.key] = attr.id;
                 });
 
                 // Categorize the changes to update tasks
@@ -99,16 +150,14 @@ class PlanServices {
                     // Contains the key: new type
                     typeChangedNormal: {},
 
+                    // this is no longer need wtf ?
                     // Contains the key: new key
                     nameChanged: {},
                 };
 
                 Object.keys(payload.metadata).forEach((schemaKey) => {
-                    // Schema key has chanhed
+                    // Schema key has changed
                     if (mapping[schemaKey]) {
-                        // Check if the new key is valid
-                        isValidSchemaKey(mapping[schemaKey]);
-
                         changes.nameChanged[schemaKey] = mapping[schemaKey];
                     }
 
@@ -174,11 +223,20 @@ class PlanServices {
 
                 // Detect the deleted metadata
                 for (const oldKey in plan.dataValues.metadata) {
-                    if (!payload.metadata[oldKey]) {
+                    // But check if it's not old key got updated
+                    if (!payload.metadata[oldKey] && !mapping[oldKey]) {
                         changes.delete.push(oldKey);
                     }
                 }
             }
+
+            // Update the attributes
+            await metadataServices.applyChanges({
+                changes,
+                planId: plan.id,
+                transaction: t,
+                attrsMap,
+            });
 
             await Plan.update(payload, {
                 where: { id },

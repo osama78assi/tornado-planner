@@ -29,8 +29,8 @@ const { contextBridge, ipcRenderer } = require("electron");
         create: (payload) => ipcRenderer.invoke(channels.plans.create, payload),
         get: ({ page, limit, filters }) =>
             ipcRenderer.invoke(channels.plans.get, page, limit, filters),
-        update: ({ id, payload }) =>
-            ipcRenderer.invoke(channels.plans.update, id, payload),
+        update: ({ id, payload, keyMapper }) =>
+            ipcRenderer.invoke(channels.plans.update, id, payload, keyMapper),
         destroy: (id) => ipcRenderer.invoke(channels.plans.destroy, id),
     });
 

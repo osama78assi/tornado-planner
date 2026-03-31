@@ -7,7 +7,7 @@ class Setting extends Model {}
 Setting.init(
     {
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             primaryKey: true,
         },
         theme: {

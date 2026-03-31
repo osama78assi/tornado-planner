@@ -22,7 +22,6 @@ function WorkspaceP() {
 
     async function handleSubmit(values) {
         try {
-            console.log('\n#############\n', values, '\n#############\n');
             const res = await createPlan({ ...values, workspaceId });
 
             setData((data) => [res, ...data]);

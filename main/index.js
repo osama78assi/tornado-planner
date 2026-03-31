@@ -102,8 +102,8 @@ function initPlansApi() {
         },
     );
 
-    ipcMain.handle(channels.plans.update, async (_, id, payload) => {
-        return await planServices.update(id, payload);
+    ipcMain.handle(channels.plans.update, async (_, id, payload, keyMapper) => {
+        return await planServices.update(id, payload, keyMapper);
     });
 
     ipcMain.handle(channels.plans.destroy, async (_, id) => {

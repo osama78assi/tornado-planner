@@ -19,7 +19,7 @@ Note.init(
             allowNull: true,
         },
         workspaceId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             allowNull: true,
             references: {
                 model: "workspaces",
@@ -27,7 +27,7 @@ Note.init(
             },
         },
         folderId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             references: {
                 model: "folders",
                 key: "id",

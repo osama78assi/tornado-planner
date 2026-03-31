@@ -7,7 +7,7 @@ class Folder extends Model {}
 Folder.init(
     {
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             autoIncrement: true,
             primaryKey: true,
         },

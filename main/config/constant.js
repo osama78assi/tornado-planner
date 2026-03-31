@@ -168,7 +168,6 @@ export function isValidValue(metadataAttr, value) {
 // Take the user schema to extract the optional attributes if passed
 export function DEFAULT_SCHEMA(key, userSchema) {
     const settings = getApplicationSettingsSync();
-    console.log('\n#############\n', userSchema, '\n#############\n');
 
     switch (key) {
         case "start date":

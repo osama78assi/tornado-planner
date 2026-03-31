@@ -4,7 +4,7 @@ export async function getPlans({ page = 1, limit = 10, filters }) {
     if (!res.success) {
         throw new Error(res.message);
     }
-    console.log('\n##### res ########\n', res, '\n#############\n');
+    console.log("\n##### res ########\n", res, "\n#############\n");
 
     return { data: res.data, pagination: res.pagination };
 }
@@ -19,8 +19,8 @@ export async function createPlan(payload) {
     return res.data;
 }
 
-export async function updatePlan(id, payload) {
-    const res = await window.plans.update({ id, payload });
+export async function updatePlan(id, payload, keyMapper) {
+    const res = await window.plans.update({ id, payload, keyMapper });
 
     if (!res.success) throw new Error(res.message);
 

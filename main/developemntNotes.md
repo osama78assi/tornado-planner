@@ -28,7 +28,7 @@ then there is a new relation with the plans table it will link the attribute wit
   sanitize metadata -> add/replace default schemas -> validate the metadata -> insert the new attributes (unique by attribute key and type on conflict do nothing) -> link the attributes to the plan via junction table -> create the plan
 
 - when update the plan  
-  prepare the differntiation object -> parse the object to prepare the final queries to update the relation between tasks and attributes that are linked to the plan
+  check if the old attribute isn't used anymore -> update that attribute or add another one -> eprepare the differntiation object -> parse the object to prepare the final queries to update the relation between tasks and attributes that are linked to the plan
 
 - when create the task
   Validate valid plan attributes -> validate the global values attribute based on types -> create the task

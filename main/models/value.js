@@ -35,7 +35,6 @@ Value.init(
         sequelize,
         timestamps: true,
         createdAt: false,
-        updatedAt: true,
         tableName: "values",
         indexes: [{ fields: ["value"], type: "BTREE" }],
     },

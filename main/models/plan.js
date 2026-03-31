@@ -31,7 +31,7 @@ Plan.init(
             allowNull: false,
         },
         workspaceId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             allowNull: false,
             references: {
                 model: "workspaces",
@@ -100,7 +100,8 @@ Task.belongsTo(Plan, {
 // Plan has many attributes (metadata)
 Plan.belongsToMany(Attribute, {
     through: PlanAttribute,
-    as: "metadata_v1",
+    // [label]
+    as: "attrs",
     foreignKey: "planId",
     otherKey: "attributeId",
     onDelete: "CASCADE",

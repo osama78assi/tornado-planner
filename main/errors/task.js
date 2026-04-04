@@ -22,3 +22,13 @@ export const UNRECOGNIZED_ATTRIBUTE = (attribute) =>
         code: "UNRECOGNIZED_ATTRIBUTE",
         attributes: { attribute },
     });
+
+export const VALUE_NOT_MATCH_TYPE = (key, type) =>
+    new ApplicationError({
+        message: `The value of attribute ${key} doesn't match the type ${type}`,
+        code: "VALUE_NOT_MATCH_TYPE",
+        attributes: {
+            key,
+            type,
+        },
+    });

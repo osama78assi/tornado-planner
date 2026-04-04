@@ -1,6 +1,7 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../config/sequelize.js";
 import PlanAttribute from "./planAttributes.js";
+import Value from "./value.js";
 
 class Attribute extends Model {}
 
@@ -43,6 +44,13 @@ Attribute.init(
 PlanAttribute.belongsTo(Attribute, {
     foreignKey: "attributeId",
     as: "attribute",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+});
+
+Attribute.hasMany(Value, {
+    foreignKey: "attributeId",
+    as: "values",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
 });

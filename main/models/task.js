@@ -24,6 +24,7 @@ Task.init(
             type: DataTypes.STRING(100),
             allowNull: true,
         },
+        // This will be deleted DON'T rely on it
         metadata: {
             type: DataTypes.JSON,
             allowNull: false,

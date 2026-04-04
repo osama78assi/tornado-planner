@@ -49,7 +49,41 @@ But what if it can be something like this ?
 |            Check             |
 
 # Application settings
+
 Tornado planner provide a `setting` page to be helpful as much as possible, so I will list the available settings in the application and its purpose
+
 1. Mode, whether it's dark or light, maybe we will have more in the future
 2. Main color, currently orange and blue is supported
 3. Default date format, that is for quick creation
+
+# Notes
+
+### 1. Update the shema of the plan where there are tasks on it
+
+If you want later to change the **schema** attribute after creating the plan you should know the behvior. Because Tornado Planner is trying to be helpful as much as possible. So let's see the expected behvior based on what the type of the field was and what it will be. adding a new field or even deleting a field
+
+#### Add new field to the schema
+
+Tornado Planner will just add the field for all tasks in the plan with empty cell on it, so you can fill them later
+
+#### Delete existing field from the schema
+
+Tornado Planner will just delete the value and the field from the tasks. As it's sensitive action that may lead to data loss it will ask you before doing that
+
+#### Update non-check attribute to non-check attribute
+
+consider the type was _text_ and change it to be _number_. Then what is already a valid number will remain a number. otherwise it will delete the value
+If the type was _date_ and change it to be _text_ (can be changed later like saving the same format).
+If it was _number_ and change it to be _text_ then no data will be lost
+
+#### Update non-check attribute to check attribute
+
+What match will remain otherwise it will be deleted
+
+#### Update check attribute to non-check attribute
+
+What match will remain otherwise it will be deleted
+
+#### Update check attribute to another check attribute
+
+What match will remain otherwise it will be deleted

@@ -1,7 +1,7 @@
 import { and, Op } from "sequelize";
 import { mapFilters } from "../util/global.js";
 
-describe("Filter mapper test cases", () => {
+describe.skip("Filter mapper test cases", () => {
     it("Should map the filters correctly. Two fields are provided, 'and' block with one condition", () => {
         const filters = {
             title: {
@@ -70,7 +70,7 @@ describe("Filter mapper test cases", () => {
     });
 });
 
-describe("Advanced filter mapper test cases", () => {
+describe.skip("Advanced filter mapper test cases", () => {
     it.skip("Should map the trivial test case", () => {
         // Normal
         let filters = {

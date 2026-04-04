@@ -36,7 +36,16 @@ Value.init(
         timestamps: true,
         createdAt: false,
         tableName: "values",
-        indexes: [{ fields: ["value"], type: "BTREE" }],
+        indexes: [
+            {
+                fields: ["taskId", "value"],
+                type: "BTREE",
+            },
+            {
+                fields: ["attributeId", "taskId"],
+                unique: true
+            },
+        ],
     },
 );
 

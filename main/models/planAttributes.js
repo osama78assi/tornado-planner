@@ -29,6 +29,12 @@ PlanAttribute.init(
         sequelize,
         timestamps: false,
         tableName: "planAttributes",
+        indexes: [
+            {
+                fields: ["planId"],
+                type: "BTREE",
+            },
+        ],
     },
 );
 

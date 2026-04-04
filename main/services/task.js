@@ -4,15 +4,24 @@ import {
     MISSING_PLAN,
     TASK_WITH_NO_PLAN,
     UNRECOGNIZED_ATTRIBUTE,
+    VALUE_NOT_MATCH_TYPE,
 } from "../errors/task.js";
+import Attribute from "../models/attribute.js";
 import Plan from "../models/plan.js";
+import PlanAttribute from "../models/planAttributes.js";
 import Task from "../models/task.js";
+import Value from "../models/value.js";
 import Workspace from "../models/workspaces.js";
 import ApplicationError from "../util/applicationError.js";
 import { getSafeLimit, mapFilters } from "../util/global.js";
+import metadataServices from "./metadata.js";
 
 class TaskServices {
     async create(details) {
+        // Mental pipeline:
+        // Get plan metadata -> validate -> create
+        const transaction = await sequelize.transaction();
+
         try {
             // Throw if there is no plan
             if (!details.planId) {
@@ -22,63 +31,111 @@ class TaskServices {
             // Get the plan
             const plan = await Plan.findByPk(details.planId, {
                 attributes: ["id", "metadata"],
+                include: [
+                    {
+                        model: Attribute,
+                        as: "attrs",
+                        through: {
+                            attributes: [],
+                        },
+                    },
+                ],
+                transaction,
             });
 
             if (!plan) {
                 throw MISSING_PLAN;
             }
 
-            // Eleminate the properties that isn't existed
-            // Take what is existed after checking if the type is valid or not
+            // Create the task
+            let task = null;
 
-            if (details.metadata && typeof details.metadata === "object") {
-                for (const key in details.metadata) {
-                    // if the key isn't existed throw an error
-                    if (!plan.dataValues.metadata[key]) {
-                        throw UNRECOGNIZED_ATTRIBUTE(key);
-                    }
+            // Update the object to create
+            const valuesToCreate = await this._sanitize(
+                plan,
+                details.metadata,
+                async () => {
+                    task = await Task.create(details, { transaction });
+                    return task.id;
+                },
+            );
 
-                    // Here it's exist, check the type.
-                    if (
-                        !isValidValue(
-                            plan.dataValues.metadata[key],
-                            details.metadata[key],
-                        )
-                    ) {
-                        throw new ApplicationError(
-                            `The value of attribute ${key} doesn't match the type ${plan.dataValues.metadata[key].type}`,
-                            "VALUE_NOT_MATCH_TYPE",
-                            {
-                                key,
-                                type: plan.dataValues.metadata[key].type,
-                            },
-                        );
-                    }
-                }
+            // Upsert the values
+            await metadataServices.upsertValues(valuesToCreate, transaction);
+
+            // Return the reshaped one
+            const finalTask = await this.getById(task.id, transaction);
+
+            await transaction.commit();
+
+            return finalTask;
+        } catch (err) {
+            if (!(err instanceof ApplicationError)) {
+                console.log(err);
             }
 
-            const task = await Task.create(details);
-
-            return task;
-        } catch (err) {
-            console.log(err);
+            await transaction.rollback();
             throw err;
         }
     }
 
     async update(id, payload) {
+        const transaction = await sequelize.transaction();
         try {
+            // That is the core case but in case it's not updating task's user defined columns this logic will be skipped
+            if (payload.metadata) {
+                // Get the plan
+                const plan = (
+                    await Task.findByPk(id, {
+                        attributes: ["id", "metadata"],
+                        include: [
+                            {
+                                model: Plan,
+                                as: "plan",
+                                include: [
+                                    {
+                                        model: Attribute,
+                                        as: "attrs",
+                                        through: {
+                                            attributes: [],
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                        transaction,
+                    })
+                ).plan;
+
+                // Update the object to create
+                valuesToCreate = await this._sanitize(
+                    plan,
+                    payload.metadata,
+                    () => id,
+                );
+                // Upsert the values
+                await metadataServices.upsertValues(
+                    valuesToCreate,
+                    transaction,
+                );
+            }
+
             await Task.update(payload, {
                 where: { id },
+                transaction,
             });
 
-            const newTask = await Task.findByPk(id);
+            const newTask = await this.getById(id, transaction);
+
+            await transaction.commit();
 
             return newTask;
         } catch (err) {
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
             }
+
+            await transaction.rollback();
             throw err;
         }
     }
@@ -102,6 +159,12 @@ class TaskServices {
 
             // Get tasks
             const data = await Task.findAll({
+                include: [
+                    {
+                        model: Attribute,
+                        as: "metadata_v1",
+                    },
+                ],
                 limit: safeLimit,
                 offset,
                 ...(where ? { where } : {}),
@@ -111,13 +174,48 @@ class TaskServices {
             const pages = Math.ceil(count / limit);
 
             return {
-                data,
+                data: this._reshape(data),
                 pagination: { pages, count },
             };
         } catch (err) {
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
             }
+
+            throw err;
+        }
+    }
+
+    async getById(id, transaction) {
+        let localTransaction = null;
+        if (transaction) {
+            localTransaction = transaction;
+        } else {
+            localTransaction = await sequelize.transaction();
+        }
+
+        try {
+            const task = await Task.findByPk(id, {
+                include: [
+                    {
+                        model: Attribute,
+                        as: "metadata_v1",
+                        through: {
+                            attributes: ["value"],
+                        },
+                    },
+                ],
+                transaction: localTransaction,
+            });
+
+            if (!transaction) await localTransaction.commit();
+
+            return this._reshape(task);
+        } catch (err) {
+            if (!(err instanceof ApplicationError)) {
+                console.log(err);
+            }
+            if (!transaction) await localTransaction.rollback();
 
             throw err;
         }
@@ -196,120 +294,104 @@ class TaskServices {
         }
     }
 
-    async _updateMetadata(planId, changes, t) {
-        // If there is no transaction then create your own
-        let transaction = null;
-        if (t) {
-            transaction = t;
-        } else {
-            transaction = await sequelize.transaction();
+    /**
+     * Helper function to move the attribute 'value' one level
+     * @param  {Task|Task[]} tasks array or single task
+     * @returns {Task|Task[]} task or tasks
+     */
+    _reshape(tasks) {
+        if (Array.isArray(tasks)) {
+            return tasks.map(this._group);
         }
 
+        return this._group(tasks);
+    }
+
+    /**
+     *
+     * @param {Task} task
+     */
+    _group(task) {
+        // Prepare the columns
+        task.columns = {};
+        task.dataValues.columns = task.columns;
+        task.metadata_v1.forEach((column, i) => {
+            task.columns[column.key] = column.Value.value;
+        });
+
+        // Make it readable in the frontend
+        delete task.metadata_v1;
+        delete task.dataValues.metadata_v1;
+
+        return task;
+    }
+
+    /**
+     * Helper function to sanitize the tasks user defined values and return the ready to create/update "value" objects
+     *
+     * **Note:** Please make sure to include the Attribute on the plan before sending it
+     * @param {Plan} plan
+     * @param {Object} metadata - Valid metadata object
+     * @param {Promise<string>|() => string} getTaskId - Can be asnyc function to get the task id in case it was create
+     * @returns
+     */
+    async _sanitize(plan, metadata, getTaskId) {
         try {
-            // Load all tasks in the memory for specified plan
-            // As an optimization later you can reject this process and
-            // set to null all new/updated fields if the tasks are too much.
-            // But note that this step is rare to happen in the middle of the plan
-            const tasks = await Task.findAll({
-                where: { planId },
-                attributes: ["metadata", "id"],
+            // Make lookup faster
+            const columnsLookup = {};
+
+            // Prepare the tasks value to create
+            let valuesToCreate = plan.attrs.map((attribute) => {
+                // Add empty object for now
+                columnsLookup[attribute.key] = null;
+
+                return {
+                    attributeId: attribute.id,
+
+                    // Save the key to lookup later
+                    key: attribute.key,
+                };
             });
 
-            // Build foreach task a new update statment
-            const updateCases = [];
-
-            tasks.forEach((task) => {
-                // Sequelize give to you the JSON as js object
-                for (let key in changes) {
-                    if (key === "new") {
-                        changes["new"].map((newKey) => {
-                            task.dataValues.metadata[newKey] = null;
-                        });
+            if (metadata && typeof metadata === "object") {
+                for (const key in metadata) {
+                    // if the key isn't existed throw an error
+                    if (!plan.dataValues.metadata[key]) {
+                        throw UNRECOGNIZED_ATTRIBUTE(key);
                     }
 
-                    if (key === "delete") {
-                        changes["delete"].map((deleteKey) => {
-                            delete task.dataValues.metadata[deleteKey];
-                        });
+                    // Here it's exist, check the type.
+                    if (
+                        !isValidValue(
+                            plan.dataValues.metadata[key],
+                            metadata[key],
+                        )
+                    ) {
+                        throw VALUE_NOT_MATCH_TYPE(
+                            key,
+                            plan.dataValues.metadata[key].type,
+                        );
                     }
 
-                    if (key === "typeChangedNormal") {
-                        for (let taskKey in changes["typeChangedNormal"]) {
-                            // Check if the value match this type then keep it, otherwise set it to null
-                            if (
-                                !isValidValue(
-                                    {
-                                        type: changes["typeChangedNormal"][
-                                            taskKey
-                                        ], // Get the new type
-                                    },
-                                    task.dataValues.metadata[taskKey],
-                                )
-                            ) {
-                                delete task.dataValues.metadata[taskKey];
-                            }
-                        }
-                    }
-
-                    if (key === "typeChangedCheck") {
-                        for (let taskKey in changes["typeChangedCheck"]) {
-                            // If it's not correct then delete it
-                            if (
-                                !isValidValue(
-                                    {
-                                        type: "check",
-                                        values: changes["typeChangedCheck"][
-                                            taskKey
-                                        ], // Take the values
-                                    },
-                                    task.dataValues.metadata[taskKey],
-                                )
-                            ) {
-                                delete task.dataValues.metadata[taskKey];
-                            }
-                        }
-                    }
-
-                    if (key === "nameChanged") {
-                        for (let oldTaskKey in changes["nameChanged"]) {
-                            // Get the new key
-                            task.dataValues.metadata[
-                                changes["nameChanged"][oldTaskKey]
-                            ] = task.dataValues.metadata[oldTaskKey];
-
-                            // Delete the old value after get copied
-                            delete task.dataValues.metadata[oldTaskKey];
-                        }
-                    }
+                    // Save the value, remember the key here is the same as the key in the attribute table
+                    columnsLookup[key] = metadata[key];
                 }
-
-                // Now the task is updated but it still in the memory, apply it in database
-                updateCases.push(
-                    `WHEN id = ${task.dataValues.id} THEN '${JSON.stringify(task.dataValues.metadata)}'`,
-                );
-            });
-
-            // Join the tasks updates to run them in one statment. Match only the tasks for this plan
-            const updateQuery = `
-                UPDATE ${Task.tableName} SET metadata = 
-                CASE ${updateCases.join(" ")} END
-                WHERE "planId" = ${planId}
-            `;
-
-            await sequelize.query(updateQuery, { transaction });
-
-            // Check if the transaction is provided then go for it, otherwise don't commit / rollback
-            if (!t) {
-                await transaction.commit();
             }
+
+            const taskId = await getTaskId?.();
+
+            // Update the object to create
+            return valuesToCreate.map((attr) => ({
+                attributeId: attr.attributeId,
+                taskId,
+                value: columnsLookup[attr.key], // Get the value
+            }));
         } catch (err) {
-            if (!t) {
-                await transaction.rollback();
-            }
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
             }
-            console.log(err);
+
+            throw err;
         }
     }
 }

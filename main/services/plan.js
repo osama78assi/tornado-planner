@@ -51,7 +51,7 @@ class PlanServices {
             });
 
             // Update/create the attributes
-            const attributeIds = await metadataServices.upsert({
+            const attributeIds = await metadataServices.upsertAttributes({
                 attributes: attrs,
                 transaction,
             });
@@ -82,18 +82,21 @@ class PlanServices {
         }
     }
 
-    async update(id, payload, mapping = {}) {
+    async update(id, payload, newKeyOldKeyMap = {}) {
         // Mental model:
         // sanitize metadata -> add/update default metadata
         // -> prepare differnciation object -> update / delete / add the attributes
         // -> update tasks relation / delete tasks values
         // Start transaction
-        const t = await sequelize.transaction();
+        const transaction = await sequelize.transaction();
         try {
             // Mapping object contains the old key -> new key
 
             // Changes object to keep track of all changes to do
             let changes = null;
+
+            // Changes object to keep track of all changes to do
+            let attrsMap;
 
             // If the metadata is provided then
             if (payload.metadata) {
@@ -134,13 +137,16 @@ class PlanServices {
                 });
 
                 // Build the map between attribute keys and ids, this will be unique across the individual plan
-                const attrsMap = {};
+                attrsMap = {};
                 plan.attrs.forEach((attr) => {
                     attrsMap[attr.key] = attr.id;
                 });
 
                 // Categorize the changes to update tasks
                 changes = {
+                    // Contains {key: type} that required to create/retriev an attribute
+                    new: {},
+
                     // Contains only the key
                     delete: [],
 
@@ -157,16 +163,26 @@ class PlanServices {
 
                 Object.keys(payload.metadata).forEach((schemaKey) => {
                     // Schema key has changed
-                    if (mapping[schemaKey]) {
-                        changes.nameChanged[schemaKey] = mapping[schemaKey];
+                    if (newKeyOldKeyMap[schemaKey]) {
+                        // Make sure that this will have new key -> old key
+                        changes.nameChanged[newKeyOldKeyMap[schemaKey]] =
+                            schemaKey;
                     }
 
                     // More readability
                     const newSchema = payload.metadata[schemaKey];
-                    const oldSchema = plan.dataValues.metadata[schemaKey];
+                    let oldSchema = plan.dataValues.metadata[schemaKey];
+
+                    // Make sure if there is a change in the name
+                    if (newKeyOldKeyMap[schemaKey])
+                        oldSchema =
+                            plan.dataValues.metadata[
+                                newKeyOldKeyMap[schemaKey]
+                            ];
 
                     // Case1: new field -> skip
                     if (!oldSchema) {
+                        changes.new[schemaKey] = newSchema.type;
                         return;
                     }
 
@@ -224,31 +240,48 @@ class PlanServices {
                 // Detect the deleted metadata
                 for (const oldKey in plan.dataValues.metadata) {
                     // But check if it's not old key got updated
-                    if (!payload.metadata[oldKey] && !mapping[oldKey]) {
+                    if (
+                        !payload.metadata[oldKey] &&
+                        !changes.nameChanged[oldKey]
+                    ) {
                         changes.delete.push(oldKey);
                     }
                 }
             }
 
             // Update the attributes
-            await metadataServices.applyChanges({
+            // This will return an object of attribute ids to swap them with the given attribute id and wether to delete them or not
+            // swap: {
+            //  [fromAttributeId]: {
+            //      toAttributeId: id,
+            //      deleteWhenDone: boolean,
+            //  }
+            // }
+            //
+            await metadataServices.applyAttributeChanges({
                 changes,
-                planId: plan.id,
-                transaction: t,
+                planId: id,
+                transaction: transaction,
                 attrsMap,
             });
 
             await Plan.update(payload, {
                 where: { id },
-                transaction: t,
+                transaction: transaction,
             });
 
             // Call task function to update specified tasks metadata if it's changed
             if (changes !== null) {
-                await taskServices._updateMetadata(id, changes, t);
+                // What really will change is the values of those which the type changed
+                // because key changed already applied and delete attributes already applied
+                await metadataServices.applyValueChanges(
+                    id,
+                    changes,
+                    transaction,
+                );
             }
 
-            await t.commit();
+            await transaction.commit();
 
             // In sqlite you need to query
             return await Plan.findByPk(id);
@@ -256,23 +289,55 @@ class PlanServices {
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
             }
-            await t.rollback();
+            await transaction.rollback();
             throw err;
         }
     }
 
     async destory(id) {
+        const transaction = await sequelize.transaction();
         try {
-            const count = await Plan.destroy(id);
+            // Get the plan linked attributes in case no more plans them to delete them
+            const attributes = await Attribute.findAll({
+                attributes: ["id"],
+                where: {
+                    "$plans.id$": id,
+                },
+                include: [
+                    {
+                        model: Plan,
+                        as: "plans",
+                        attributes: [], // avoids fetching full plan data
+                    },
+                ],
+                subQuery: false, // ensures proper filtering in M:N
+                transaction: transaction,
+            });
+
+            const count = await Plan.destroy({
+                where: {
+                    id,
+                },
+                transaction: transaction,
+            });
+
+            // Check if there is still attributes are used
+            await metadataServices.checkUsage(attributes, transaction);
+
             if (count === 0) {
                 throw PLAN_NOT_EXIST;
             }
+
+            await transaction.commit();
 
             return true;
         } catch (err) {
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
             }
+
+            await transaction.rollback();
+
             throw err;
         }
     }

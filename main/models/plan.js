@@ -108,4 +108,21 @@ Plan.belongsToMany(Attribute, {
     onUpdate: "CASCADE",
 });
 
+Attribute.belongsToMany(Plan, {
+    through: PlanAttribute,
+    // [label]
+    as: "plans",
+    foreignKey: "attributeId",
+    otherKey: "planId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+});
+
+PlanAttribute.belongsTo(Plan, {
+    foreignKey: "planId",
+    as: "plan",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+});
+
 export default Plan;

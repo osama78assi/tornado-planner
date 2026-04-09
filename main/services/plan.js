@@ -14,6 +14,7 @@ import taskServices from "./task.js";
 import metadataServices from "./metadata.js";
 import PlanAttribute from "../models/planAttributes.js";
 import Attribute from "../models/attribute.js";
+import Value from "../models/value.js";
 
 class PlanServices {
     async create(details) {
@@ -156,7 +157,6 @@ class PlanServices {
                     // Contains the key: new type
                     typeChangedNormal: {},
 
-                    // this is no longer need wtf ?
                     // Contains the key: new key
                     nameChanged: {},
                 };
@@ -250,15 +250,12 @@ class PlanServices {
             }
 
             // Update the attributes
-            // This will return an object of attribute ids to swap them with the given attribute id and wether to delete them or not
+            // This will return an object of attribute ids to swap them
             // swap: {
-            //  [fromAttributeId]: {
-            //      toAttributeId: id,
-            //      deleteWhenDone: boolean,
-            //  }
+            //  [fromAttributeId]: [toAttributeId]
             // }
             //
-            await metadataServices.applyAttributeChanges({
+            changes.swap = await metadataServices.applyAttributeChanges({
                 changes,
                 planId: id,
                 transaction: transaction,
@@ -321,8 +318,11 @@ class PlanServices {
                 transaction: transaction,
             });
 
-            // Check if there is still attributes are used
-            await metadataServices.checkUsage(attributes, transaction);
+            // Delete the attributes where it's not no longer used
+            await metadataServices.deleteNotUsedAttributes(
+                attributes,
+                transaction,
+            );
 
             if (count === 0) {
                 throw PLAN_NOT_EXIST;

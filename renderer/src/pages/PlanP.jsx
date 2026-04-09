@@ -1,16 +1,23 @@
 import { useParams } from "react-router-dom";
 import PlanCardHeader from "../components/plan/PlanCardHeader";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useLayoutEffect } from "react";
 import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
 import TasksTable from "../components/task/TaskTable";
 import { getTasks } from "../api/task";
 import { getPlans } from "../api/plan";
 import Checkbox from "../components/ui/Checkbox";
+import { useDispatch } from "react-redux";
+import { setCurrentPage } from "../state/navigator";
 
 function PlanP() {
+    const dispatch = useDispatch();
     const { planId } = useParams();
     const [loadingPlan, setLoadingPlan] = useState(true);
     const [plan, setPlan] = useState({});
+
+    useLayoutEffect(() => {
+        dispatch(setCurrentPage("workspace"));
+    }, [dispatch]);
 
     const {
         data: tasks,
@@ -36,7 +43,6 @@ function PlanP() {
                 } = await getPlans({ filters: { id: planId } });
 
                 setPlan(plan);
-                console.log("\n#############\n", plan, "\n#############\n");
                 // Set the headers
                 let headers = [];
                 // 1. add the checkbox
@@ -116,7 +122,7 @@ function PlanP() {
     }, []);
 
     return (
-        <>
+        <div className="px-2 py-3">
             <PlanCardHeader plan={plan} loading={loadingPlan} />
 
             <div className="py-2 w-full items overflow-auto">
@@ -124,7 +130,7 @@ function PlanP() {
 
                 <div ref={elementRef} />
             </div>
-        </>
+        </div>
     );
 }
 

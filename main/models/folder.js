@@ -19,6 +19,20 @@ Folder.init(
             type: DataTypes.STRING(100),
             allowNull: true,
         },
+        workspaceId: {
+            type: DataTypes.BIGINT,
+            references: {
+                model: "workspaces",
+                key: "id",
+            },
+        },
+        parentFolderId: {
+            type: DataTypes.BIGINT,
+            references: {
+                model: "folders",
+                key: "id",
+            },
+        },
     },
     {
         sequelize,
@@ -42,6 +56,7 @@ Folder.init(
     },
 );
 
+// Each folder got many notes
 Folder.hasMany(Note, {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
@@ -54,6 +69,22 @@ Note.belongsTo(Folder, {
     onUpdate: "CASCADE",
     as: "folder",
     foreignKey: "folderId",
+});
+
+// Each folder has a parent
+Folder.belongsTo(Folder, {
+    foreignKey: "folderId",
+    as: "parentFolder",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+// Each folder have many children folders
+Folder.hasMany(Folder, {
+    as: "folders",
+    foreignKey: "folderId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
 });
 
 export default Folder;

@@ -1,38 +1,25 @@
-import { useEffect, useRef, useState } from "react";
-import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
-import MainContainer from "../components/ui/MainContainer";
-import { IoLayers } from "react-icons/io5";
-import { LuNotebook } from "react-icons/lu";
-
-import SidebarContainer from "../components/ui/SidebarContainer";
-import SidebarItem from "../components/ui/SidebarItem";
-import BackBtn from "../components/ui/BackBtn";
+import { useParams } from "react-router-dom";
+import { useLayoutEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setCurrentPage } from "../state/navigator";
 
 function NotesP() {
+    const dispatch = useDispatch();
+    const { workspaceId } = useParams();
+
+    useLayoutEffect(() => {
+        dispatch(setCurrentPage("workspace"));
+    }, [dispatch]);
+
     return (
-        <>
-            <SidebarContainer mainBtn={<BackBtn />}>
-                <ul className="divide-y divide-[var(--main-divider-color)] pt-2">
-                    <SidebarItem
-                        icon={<IoLayers className="text-xl" />}
-                        to={"/workspaces"}
-                    >
-                        Workspaces
-                    </SidebarItem>
-                    <SidebarItem
-                        icon={<LuNotebook className="text-xl" />}
-                        to={"/notes"}
-                    >
-                        Notes
-                    </SidebarItem>
-                </ul>
-            </SidebarContainer>
-            <MainContainer>
-                <div className="w-[95%] mx-auto p-[0.5rem]">
-                    <h1 className="text-2xl">Notes</h1>
-                </div>
-            </MainContainer>
-        </>
+        <div className="px-2 py-3">
+            <h1 className="text-3xl text-(--main-interactive-color-v1) mb-6 mt-4">
+                Notes
+            </h1>
+            <p className="text-(--main-text-color)">
+                Workspace-specific notes for workspace: {workspaceId}
+            </p>
+        </div>
     );
 }
 

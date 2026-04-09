@@ -154,24 +154,24 @@
 
 /* Main Application */
 .sidebar {
-    @apply border-e border-(--main-divider-color) bg-(--secondary-color) w-50 transition-[width]  h-[100%];
+    @apply border-e border-(--main-divider-color) bg-(--secondary-color) w-40 transition-[width]  h-[100%];
 }
 
 .main-content {
-    @apply bg-(--main-color) w-[calc(100%-var(--spacing)*50)] transition-[width];
+    @apply bg-(--main-color) w-[calc(100%-var(--spacing)*40)] transition-[width];
 }
 
 .main-content_header {
-    @apply flex justify-between items-center bg-[var(--secondary-color)] h-[40px] border-b border-b-[var(--main-divider-color)] z-50 relative;
+    @apply flex justify-between items-center bg-[var(--secondary-color)] h-[70px] border-b border-b-[var(--main-divider-color)] z-50 relative;
 }
 
 .main-content_body {
     @apply bg-(--main-color) w-full transition-[width] overflow-auto;
-    height: calc(100% - 40px);
+    height: calc(100% - 70px);
 }
 
 .sidebar-header {
-    @apply p-3 flex justify-between items-center border-b border-b-[var(--main-divider-color)] h-[40px];
+    @apply p-3 flex justify-between items-center border-b border-b-[var(--main-divider-color)] h-[70px];
 }
 
 .nav-item {
@@ -187,16 +187,12 @@
     @apply w-full;
 }
 
-.sidebar_toggled {
-    @apply w-0 border-0;
+.sidebar_collapsed {
+    @apply w-16 transition-[width] duration-300;
 }
 
-.sidebar_floating {
-    @apply absolute transition-all left-0 top-[40px] h-[calc(100%-40px)] z-9998;
-}
-
-.sidebar_floating_hidden {
-    @apply -left-full!;
+.sidebar_collapsed > div {
+    @apply overflow-hidden;
 }
 /* HTML: <div class="loader"></div> */
 .spinnar {

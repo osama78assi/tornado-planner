@@ -2,6 +2,7 @@ import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
 import Plan from "./plan.js";
 import Note from "./note.js";
+import Folder from "./folder.js";
 
 class Workspace extends Model {}
 
@@ -77,6 +78,20 @@ Plan.belongsTo(Workspace, {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
     as: "workspace",
+    foreignKey: "workspaceId",
+});
+
+// Each workspace have many folders
+Workspace.hasMany(Folder, {
+    as: "folders",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+    foreignKey: "workspaceId",
+});
+Folder.belongsTo(Workspace, {
+    as: "workspace",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
     foreignKey: "workspaceId",
 });
 

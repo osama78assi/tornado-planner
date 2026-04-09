@@ -3,7 +3,7 @@ import { IoMdSearch } from "react-icons/io";
 import Modal from "../ui/Modal";
 import Tag from "../ui/Tag";
 import SearchResults from "./SearchResults";
-import { searchNotes } from "../../api/notes";
+import { searchNotes } from "../../api/note";
 import NoteResult from "../note/NoteResult";
 import { searchTasks } from "../../api/task";
 import TaskResult from "../task/TaskResult";

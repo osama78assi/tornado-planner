@@ -20,7 +20,7 @@ Note.init(
         },
         workspaceId: {
             type: DataTypes.BIGINT,
-            allowNull: true,
+            allowNull: false,
             references: {
                 model: "workspaces",
                 key: "id",

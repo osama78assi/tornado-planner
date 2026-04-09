@@ -10,7 +10,8 @@ import { FaRegWindowMaximize, FaRegWindowRestore } from "react-icons/fa";
 import { useLayoutEffect, useState } from "react";
 import { getSettingsSync } from "./util/main";
 import { Toaster } from "react-hot-toast";
-import MainProvider from "./components/ui/MainProvider";
+import Sidebar from "./components/main/Sidebar";
+import Main from "./components/main/Main";
 
 function AppLayout() {
     const [windowMaximized, setWindowMaximized] = useState(false);
@@ -93,24 +94,23 @@ function AppLayout() {
                 </div>
             </div>
 
-            <MainProvider>
-                <div className="main-window" id="main-window">
-                    <Toaster
-                        position="top-center"
-                        containerStyle={{
-                            zIndex: 9998,
-                            marginTop: "25px",
-                        }}
-                        toastOptions={{
-                            style: {
-                                backgroundColor: "var(--main-color)",
-                                color: "var(--main-text-color)",
-                            },
-                        }}
-                    />
-                    <Outlet />
-                </div>
-            </MainProvider>
+            <div className="main-window" id="main-window">
+                <Toaster
+                    position="top-center"
+                    containerStyle={{
+                        zIndex: 9998,
+                        marginTop: "25px",
+                    }}
+                    toastOptions={{
+                        style: {
+                            backgroundColor: "var(--main-color)",
+                            color: "var(--main-text-color)",
+                        },
+                    }}
+                />
+                <Sidebar />
+                <Main />
+            </div>
         </div>
     );
 }

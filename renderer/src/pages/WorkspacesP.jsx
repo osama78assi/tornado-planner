@@ -3,19 +3,27 @@ import WorkspaceItem from "../components/workspace/WorkspaceItem";
 import Button from "../components/ui/Button";
 import Header from "../components/ui/Header";
 import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
 import Modal from "../components/ui/Modal";
 import WorkspaceForm from "../components/workspace/WorkspaceForm";
 import toast from "react-hot-toast";
 import Tag from "../components/ui/Tag";
 import Workspaces from "../components/workspace/Workspaces";
+import { getDayStatus } from "../util/main";
+import { useDispatch } from "react-redux";
+import { setCurrentPage } from "../state/navigator";
 
 function WorkspacesP() {
+    const dispatch = useDispatch();
     const { elementRef, data, setData, loading } = useInfiniteScrolling({
         fetchFunction: getWorkspaces,
         limit: 10,
     });
     const [isOpen, setIsOpen] = useState(false);
+
+    useLayoutEffect(() => {
+        dispatch(setCurrentPage("home"));
+    }, [dispatch]);
 
     async function handleCreateWorkspace(data) {
         try {
@@ -34,6 +42,18 @@ function WorkspacesP() {
 
     return (
         <div className="px-2 py-3">
+            <div className="py-4">
+                <span className="inline-flex -mb-4 text-sm text-(--thirdary-text-color)">
+                    {getDayStatus()}
+                </span>
+                <h1 className="text-3xl text-(--main-text-color) font-bold">
+                    Let's plan{" "}
+                    <span className="text-(--main-interactive-color-v1)">
+                        mate...
+                    </span>
+                </h1>
+            </div>
+
             <Header title="Workspaces">
                 <Button.IconButton
                     icon="MdOutlineLibraryAdd"

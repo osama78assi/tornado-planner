@@ -12,7 +12,6 @@ Value.init(
         },
         value: {
             type: DataTypes.STRING(500),
-            allowNull: false,
         },
         attributeId: {
             type: DataTypes.BIGINT,
@@ -30,6 +29,14 @@ Value.init(
             },
             allowNull: false,
         },
+        // This will help in updating the tasks
+        planId: {
+            type: DataTypes.BIGINT,
+            references: {
+                model: "plans",
+                key: "id",
+            },
+        },
     },
     {
         sequelize,
@@ -43,7 +50,7 @@ Value.init(
             },
             {
                 fields: ["attributeId", "taskId"],
-                unique: true
+                unique: true,
             },
         ],
     },

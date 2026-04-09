@@ -6,6 +6,7 @@ import PlanAttribute from "../models/planAttributes.js";
 import Plan from "../models/plan.js";
 import Value from "../models/value.js";
 import { v4 as generateId } from "uuid";
+import { isValidValue } from "../config/constant.js";
 
 /**
  * @typedef AttributeAttrs
@@ -23,7 +24,8 @@ import { v4 as generateId } from "uuid";
 /**
  * Callback function to run when there is plan(s) uses this particular attribute
  * @callback onMatch
- * @param {string} key                      - The key that matched
+ * @param {string} key                      - The key that matched - it's a 'key' in the table attributes
+ * @param {Attribute} attribute             - The real attribute data in the database
  * @param {string[]} keys                   - The keys you want to loop over them, those keys must be used as key in the attribute table
  */
 
@@ -59,13 +61,13 @@ class MetadataServices {
      * @param {import("sequelize").Transaction} props.transaction
      */
     async upsertAttributes({ attributes, transaction }) {
-        let loccalTransaction;
+        let localTransaction;
 
         // Create or accept a transaction
         if (!transaction) {
-            loccalTransaction = await sequelize.transaction();
+            localTransaction = await sequelize.transaction();
         } else {
-            loccalTransaction = transaction;
+            localTransaction = transaction;
         }
 
         // This consider the key is already trimmed
@@ -77,7 +79,7 @@ class MetadataServices {
             // Create or ingore them
             await Attribute.bulkCreate(attributes, {
                 ignoreDuplicates: true,
-                transaction: loccalTransaction,
+                transaction: localTransaction,
             });
 
             // Prepare the matcher & replacements
@@ -90,19 +92,22 @@ class MetadataServices {
                 })
                 .join(",");
 
-            // Return the Ids to link them to the plans
+            // Return the details to link them to the plans
             const rows = await sequelize.query(
                 `
                     WITH v(key, type) AS (
                         VALUES ${pairs}
                     )
-                    SELECT attribute.id
+                    SELECT
+                        attribute.id,
+                        attribute.key,
+                        attribute.type
                     FROM attributes attribute
                     JOIN v
                     ON v.key = attribute.key AND v.type = attribute.type;
                 `,
                 {
-                    transaction: loccalTransaction,
+                    transaction: localTransaction,
                     replacements: {
                         ...replacement,
                     },
@@ -112,7 +117,7 @@ class MetadataServices {
 
             // If there is no passed transaction then commit
             if (!transaction) {
-                await loccalTransaction.commit();
+                await localTransaction.commit();
             }
 
             return rows;
@@ -123,7 +128,7 @@ class MetadataServices {
 
             if (!transaction) {
                 // Rollback in case the transaction isn't passed
-                await loccalTransaction.rollback();
+                await localTransaction.rollback();
             }
 
             throw err;
@@ -151,16 +156,17 @@ class MetadataServices {
 
             values.forEach((v, i) => {
                 rows.push(
-                    `(:value_${i}, :attributeId_${i}, :taskId_${i}, :updatedAt_${i})`,
+                    `(:value_${i}, :attributeId_${i}, :planId_${i}, :taskId_${i}, :updatedAt_${i})`,
                 );
                 replacements[`value_${i}`] = v.value;
                 replacements[`attributeId_${i}`] = v.attributeId;
                 replacements[`taskId_${i}`] = v.taskId;
                 replacements[`updatedAt_${i}`] = now;
+                replacements[`planId_${i}`] = v.planId;
             });
 
             const sql = `
-                INSERT INTO "${Value.tableName}" (value, "attributeId", "taskId", "updatedAt")
+                INSERT INTO "${Value.tableName}" (value, "attributeId", "planId", "taskId", "updatedAt")
                 VALUES ${rows.join(",")}
                 ON CONFLICT("attributeId", "taskId")
                 DO UPDATE SET
@@ -210,6 +216,9 @@ class MetadataServices {
 
                 // Contains the id to de-attach it from the plan
                 toDeAttach: [],
+
+                // Sometimes only the attach is required it's {planId, attributeId}
+                toAttach: [],
             };
 
             // Create the swap objecet to return it
@@ -234,7 +243,7 @@ class MetadataServices {
                     actions.toDeAttach.push(attrsMap[key]);
                 },
                 attrsMap,
-                t: localTransaction,
+                transaction: localTransaction,
             });
 
             // 2. Update:
@@ -254,17 +263,17 @@ class MetadataServices {
                     });
                 },
                 onMoreThanOneMatch: (key, attribute) => {
-                    // Save the id for later replace
-                    let __id = generateId();
-                    actions.toCreate.push({ key, type: "check", __id });
+                    actions.toCreate.push({ key, type: "check" });
                     actions.toDeAttach.push(attrsMap[key]); // Do map and get the id by the key
-
                     // This is just swap because two plans are using this attribte
+                    // Here you add the attribute key you need to change
                     swap[attrsMap[key]] = {
-                        toAttributeId: __id,
+                        key,
+                        type: "check",
                     };
                 },
                 attrsMap,
+                transaction: localTransaction,
             });
 
             // Second go with typeChangedNormal, where it's an object that each key hold the new type so it's pretty much the same
@@ -281,22 +290,20 @@ class MetadataServices {
                     });
                 },
                 onMoreThanOneMatch: (key, attribute) => {
-                    // Save the id for later replace
-                    let __id = generateId();
-
                     actions.toCreate.push({
                         key,
                         type: changes.typeChangedNormal[key],
-                        __id,
                     });
                     actions.toDeAttach.push(attrsMap[key]); // Do map and get the id by the key
 
                     // This is just swap because two plans are using this attribte
                     swap[attrsMap[key]] = {
-                        toAttributeId: __id,
+                        key,
+                        type: changes.typeChangedNormal[key],
                     };
                 },
                 attrsMap,
+                transaction: localTransaction,
             });
 
             // Here a little bit different
@@ -305,11 +312,6 @@ class MetadataServices {
             await this._checkDiff({
                 keys: Object.keys(changes.nameChanged),
                 onOneMatch: (key, attribute) => {
-                    console.log(
-                        "\n#############\n",
-                        "But why",
-                        "\n#############\n",
-                    );
                     const id = attribute.id;
                     actions.updatedAttrsKey.push({
                         replacements: {
@@ -319,11 +321,26 @@ class MetadataServices {
                         statement: `WHEN id=:id_${id} THEN :key_${id}`,
                     });
                 },
+                onMoreThanOneMatch: (key, attribute) => {
+                    actions.toCreate.push({
+                        key: changes.nameChanged[key],
+                        type: attribute.type,
+                    });
+                    actions.toDeAttach.push(attrsMap[key]); // Do map and get the id by the key
+
+                    // This is just swap because two plans are using this attribte
+                    swap[attrsMap[key]] = {
+                        key: changes.nameChanged[key],
+                        type: attribute.type,
+                    };
+                },
                 attrsMap,
+                transaction: localTransaction,
             });
 
             // Check what to create/retrieve
             await this._checkDiff({
+                keyTypeMap: changes.new,
                 keys: Object.keys(changes.new),
                 onNoMatch: (key, keys) => {
                     actions.toCreate.push({
@@ -331,22 +348,29 @@ class MetadataServices {
                         type: changes.new[key],
                     });
                 },
-                attrsMap,
-                skip: true, // To skip search
-            });
 
-            console.log(
-                "\n###  STRHFZDFgk##########\n",
-                actions,
-                "\n#############\n",
-            );
+                // Wether it was one match or two it will be more because this will be attached too
+                onMatch: (key, attribute) => {
+                    // Just add the PlanAttribute data type
+                    actions.toAttach.push({
+                        planId: planId,
+                        attributeId: attribute.id,
+                    });
+                },
+
+                transaction: localTransaction,
+                attrsMap,
+                searchByObject: true, // To search by the key & type
+            });
 
             // Build the final queries
             // 1. Delete the attributes . simple
-            await Attribute.destroy({
-                where: { id: { [Op.in]: actions.deleteAttrs } },
-                transaction: localTransaction,
-            });
+            if (actions.deleteAttrs.length) {
+                await Attribute.destroy({
+                    where: { id: { [Op.in]: actions.deleteAttrs } },
+                    transaction: localTransaction,
+                });
+            }
 
             // 2. Build the dynamic update query
             if (
@@ -398,23 +422,42 @@ class MetadataServices {
                 );
             }
 
+            // Save the final swap object to return it
+            let finalSwap = {};
+
             // 3. Create the missing attributes
             if (actions.toCreate.length) {
-                const ids = (
-                    await this.upsertAttributes({
-                        attributes: actions.toCreate,
-                        transaction: localTransaction,
-                    })
-                ).map((attr) => attr.id);
+                const attributes = await this.upsertAttributes({
+                    attributes: actions.toCreate,
+                    transaction: localTransaction,
+                });
 
                 // Attach them
                 await PlanAttribute.bulkCreate(
-                    ids.map((attributeId) => ({ attributeId, planId })),
+                    attributes.map((attr) => ({
+                        attributeId: attr.id,
+                        planId,
+                    })),
                     {
                         transaction: localTransaction,
                         ignoreDuplicates: true, // In case there is something duplicated then just ignore it
                     },
                 );
+
+                // Build a map for easy lookup from key-type to id
+                const lookupKeys = {};
+                attributes.forEach((attribute) => {
+                    lookupKeys[`${attribute.key}-${attribute.type}`] =
+                        attribute.id;
+                });
+
+                // Build the final swap
+                for (const fromAttrId in swap) {
+                    finalSwap[fromAttrId] =
+                        lookupKeys[
+                            `${swap[fromAttrId].key}-${swap[fromAttrId].type}`
+                        ];
+                }
             }
 
             // 4. De-attach now
@@ -432,11 +475,18 @@ class MetadataServices {
                 });
             }
 
+            // 5. Attach now
+            if (actions.toAttach.length) {
+                await PlanAttribute.bulkCreate(actions.toAttach, {
+                    transaction: localTransaction,
+                });
+            }
+
             if (!transaction) {
                 await localTransaction.commit();
             }
 
-            return true;
+            return finalSwap;
         } catch (err) {
             if (!(err instanceof ApplicationError)) {
                 console.log(err);
@@ -464,6 +514,48 @@ class MetadataServices {
         }
 
         try {
+            // Swap if there is something provided
+            if (Object.keys(changes.swap).length) {
+                // Build the cases array
+                const casess = [];
+
+                // Build the ids array
+                const ids = Object.keys(changes.swap).map((fromAttrId) => {
+                    casess.push(
+                        `WHEN "attributeId"=${fromAttrId} THEN ${changes.swap[fromAttrId]}`,
+                    );
+                    return `(${fromAttrId})`;
+                });
+
+                // Run the update
+                await sequelize.query(
+                    `
+                        WITH attributeIds (targetAttributeId) AS (
+                            VALUES ${ids.join(",")}
+                        )
+
+                        UPDATE
+                        "${Value.tableName}" SET "attributeId" =
+                        CASE
+                            ${casess.join("\n")}
+                            ELSE "attributeId"
+                        END
+                        FROM attributeIds
+                        WHERE
+                            "planId" = :planId AND 
+                            attributeIds.targetAttributeId = "attributeId"
+                    `,
+                    {
+                        type: QueryTypes.UPDATE,
+                        raw: true,
+                        replacements: {
+                            planId,
+                        },
+                        transaction: localTransaction,
+                    },
+                );
+            }
+
             // Load all tasks in the memory for specified plan
             // As an optimization later you can reject this process and
             // set to null all new/updated fields if the tasks are too much.
@@ -471,7 +563,7 @@ class MetadataServices {
             // This is the values
             const taskValues = await PlanAttribute.findAll({
                 where: { planId },
-                attributes: ["id"],
+                attributes: ["id", "planId"],
                 include: [
                     {
                         model: Attribute,
@@ -537,6 +629,7 @@ class MetadataServices {
                     changes?.typeChangedNormal?.[
                         taskColumn?.dataValues?.attribute?.key
                     ];
+
                 if (typeChangedNormal) {
                     // If matched then loop over its values. This is task level
                     taskColumn.dataValues.attribute.values.map((value) => {
@@ -550,7 +643,7 @@ class MetadataServices {
                         ) {
                             // Save update even it's from database
                             updateValueCases.push(
-                                `WHENN id=:task_value_id_${value.id} THEN NULL`,
+                                `WHEN id=:task_value_id_${value.id} THEN NULL`,
                             );
                             // Save the replacements
                             valueReplacements[`task_value_id_${value.id}`] =
@@ -573,14 +666,14 @@ class MetadataServices {
                             !isValidValue(
                                 {
                                     type: "check",
-                                    values: typeChangedCheck[taskKey], // Take the values
+                                    values: typeChangedCheck, // Take the values
                                 },
-                                taskColumn.dataValues.metadata[taskKey],
+                                typeChangedCheck,
                             )
                         ) {
                             // Save update even it's from database
                             updateValueCases.push(
-                                `WHENN id=:task_value_id_${value.id} THEN NULL`,
+                                `WHEN id=:task_value_id_${value.id} THEN NULL`,
                             );
                             // Save the replacements
                             valueReplacements[`task_value_id_${value.id}`] =
@@ -592,19 +685,23 @@ class MetadataServices {
                 }
             }
 
-            // Join the tasks updates to run them in one statment. Match only the tasks for this plan
-            const updateQuery = `
-                WITH ids(id) AS (
+            if (updateValueCases.length) {
+                // Join the tasks updates to run them in one statment. Match only the tasks for this plan
+                const updateQuery = `
+                WITH ids("targetId") AS (
                     VALUES ${ids.join(", ")}
                 )
-                UPDATE ${Value.tableName} SET value = 
-                CASE ${updateValueCases.join(" ")} END
-                WHERE "id" = ids.id
+                UPDATE "${Value.tableName}" SET "value" = 
+                CASE ${updateValueCases.join(" ")} ELSE "value" END
+                FROM ids
+                WHERE id = ids."targetId"
             `;
 
-            await sequelize.query(updateQuery, {
-                transaction: localTransaction,
-            });
+                await sequelize.query(updateQuery, {
+                    transaction: localTransaction,
+                    replacements: valueReplacements,
+                });
+            }
 
             // Check if the transaction is provided then go for it, otherwise don't commit / rollback
             if (!transaction) {
@@ -626,7 +723,7 @@ class MetadataServices {
      * @param {Attribute[]} attributes
      * @param {import("sequelize").Transaction} transaction
      */
-    async checkUsage(attributes, transaction) {
+    async deleteNotUsedAttributes(attributes, transaction) {
         let localTransaction = null;
         if (transaction) {
             localTransaction = transaction;
@@ -686,14 +783,22 @@ class MetadataServices {
 
     /**
      * Helper function to check how many plans related to the specific attribute
-     * @param {string} id
+     * @param {Object} props
+     * @param {string} props.id
+     * @param {string} props.key
+     * @param {string} props.type
      * @param {import("sequelize").Transaction} transaction
      * @returns
      */
-    async _checkUsage(id, transaction) {
+    async _checkUsage({ id, key, type, transaction }) {
         return await PlanAttribute.findAll({
             where: {
-                "$attribute.id$": id,
+                ...(id
+                    ? { "$attribute.id$": id }
+                    : {
+                          "$attribute.key$": key,
+                          "$attribute.type$": type,
+                      }),
             },
             include: [
                 {
@@ -719,7 +824,8 @@ class MetadataServices {
      * @param {onIteration} props.onIteration
      * @param {Object} props.attrsMap                                   - Mapper between attribute keys and the id of it
      * @param {import("sequelize").Transaction} props.transaction       - The transaction, will make the operation faster
-     * @param {boolean} props.skip                                      - To skip the search for usage `default is false` -> always onNoMatch get called
+     * @param {Object} props.keyTypeMap                                 - The map where the keys is the attribute key and the value is the type of the attribute
+     * @param {boolean} props.searchByObject                            - To search by the key and the value of the key it must be {key: type}, `default is false`
      * @param {boolean} props.callIntersection                          - To call onMatch even if onOneMatch or onMoreThanOneMatch got passed or not `default true`
      */
     async _checkDiff({
@@ -731,17 +837,26 @@ class MetadataServices {
         onMatch,
         attrsMap,
         transaction,
-        skip = false,
+        keyTypeMap,
+        searchByObject = false,
         callIntersection = true,
     }) {
         for (let key of keys) {
-            if (skip) {
-                onNoMatch?.(key, keys);
-                continue;
+            // Take the id of that specific attribute, again that is possible because the key itself is unique across the plan
+            let data = null;
+            if (!searchByObject) {
+                data = await this._checkUsage({
+                    id: attrsMap[key],
+                    transaction,
+                });
+            } else {
+                data = await this._checkUsage({
+                    key,
+                    type: keyTypeMap?.[key],
+                    transaction,
+                });
             }
 
-            // Take the id of that specific attribute, again that is possible because the key itself is unique across the plan
-            const data = await this._checkUsage(attrsMap[key], transaction);
             if (data.length === 0) {
                 onNoMatch?.(key, keys);
             } else if (data.length > 1) {

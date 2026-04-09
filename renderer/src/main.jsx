@@ -5,20 +5,23 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { getSettings } from "./util/main.js";
 import { getConstants } from "./util/constants.js";
+import { Provider } from "react-redux";
+import store from "./state/store.js";
 
 async function main() {
     // Get the application constants
     await getConstants();
-    
+
     // Get the application settings
     await getSettings();
 
-
     // Create the root
     createRoot(document.getElementById("root")).render(
-        <BrowserRouter>
-            <App />
-        </BrowserRouter>,
+        <Provider store={store}>
+            <BrowserRouter>
+                <App />
+            </BrowserRouter>
+        </Provider>,
     );
 }
 

@@ -1,11 +1,18 @@
 import { GoSidebarCollapse } from "react-icons/go";
-import { useMainLayoutContext } from "./MainProvider";
 import { useNavigate } from "react-router-dom";
 import HomeBtn from "./HomeBtn";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleSidebar } from "../../state/layoutSlice";
 
 function SidebarContainer({ mainBtn = null, children }) {
-    const { isSidebarToggled, isFloating, toggleSidebar } =
-        useMainLayoutContext();
+    const { isSidebarToggled, isFloating } = useSelector(
+        (state) => state.layout,
+    );
+    const dispatch = useDispatch();
+
+    function handleToggleSidebar() {
+        dispatch(toggleSidebar());
+    }
 
     let toggledClass = "";
 
@@ -30,7 +37,7 @@ function SidebarContainer({ mainBtn = null, children }) {
                     {!isFloating ? (
                         <button
                             className="p-1 cursor-pointer"
-                            onClick={toggleSidebar}
+                            onClick={handleToggleSidebar}
                         >
                             <GoSidebarCollapse className="text-2xl text-[var(--main-text-color-v3)] hover:text-[var(--secondary-text-v2)] transition-colors" />
                         </button>

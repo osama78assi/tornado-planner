@@ -24,7 +24,7 @@ class TaskHandlers {
             let results;
 
             if (!search) {
-                results = await taskServices.get(page, limit, filters);
+                results = await taskServices.getAll(page, limit, filters);
             } else {
                 // The different here that this function will include all related models to provide more information. as an optimization
                 results = await taskServices.search(page, limit, filters);

@@ -37,7 +37,7 @@ export function sanitizeMetadata(obj) {
             obj[trimmedKey].values = [
                 ...new Set(
                     obj[trimmedKey]?.values
-                        .map((v) => v.trim())
+                        .map((v) => v?.trim?.() ?? v)
                         .filter((v) => v !== ""),
                 ),
             ];

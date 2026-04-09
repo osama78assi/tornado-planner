@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 import { GoSidebarExpand } from "react-icons/go";
-import { useMainLayoutContext } from "./MainProvider";
-
+import { useSelector, useDispatch } from "react-redux";
+import { toggleSidebar } from "../../state/layoutSlice";
 
 function MainContainer({ children }) {
-    const { isSidebarToggled, isFloating, toggleSidebar } =
-        useMainLayoutContext();
+    const { isSidebarToggled, isFloating } = useSelector(
+        (state) => state.layout,
+    );
+    const dispatch = useDispatch();
 
     const [showBtn, setIsShowBtn] = useState(false);
+
+    function handleToggleSidebar() {
+        dispatch(toggleSidebar());
+    }
 
     let fullWidthClass = "";
     if ((!isFloating && isSidebarToggled) || isFloating) {
@@ -40,7 +46,7 @@ function MainContainer({ children }) {
                 {showBtn ? (
                     <button
                         className="p-1 cursor-pointer"
-                        onClick={toggleSidebar}
+                        onClick={handleToggleSidebar}
                     >
                         <GoSidebarExpand className="text-2xl text-(var(--main-text-color)) hover:text-[var(--secondary-text-color)] transition-colors" />
                     </button>

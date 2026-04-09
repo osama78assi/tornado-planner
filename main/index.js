@@ -4,7 +4,10 @@ import { dirname, join } from "path";
 import { connectDB } from "./config/sequelize.js";
 import { ipcMain } from "electron/main";
 import channels from "./config/channels.js";
-import { checkApplicationSettings, getApplicationSettingsSync } from "./config/main.js";
+import {
+    checkApplicationSettings,
+    getApplicationSettingsSync,
+} from "./config/main.js";
 import settingServices from "./services/setting.js";
 import { testDate } from "./config/scripts.js";
 import { errorHandler } from "./util/applicationError.js";
@@ -199,14 +202,11 @@ async function main(params) {
         return channels;
     });
 
-    // Create the window
-    const window = createWindow();
-
     // Connect to database
     await connectDB();
 
     // await checkDatabaseFile();
-    
+
     // Check settings
     await checkApplicationSettings();
 
@@ -228,6 +228,9 @@ async function main(params) {
     initFoldersApi();
     initTasksApi();
     initNotesApi();
+
+    // Create the window
+    const window = createWindow();
 
     // Close the window on windows and linux
     app.on("window-all-closed", () => {

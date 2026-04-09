@@ -4,7 +4,6 @@ export async function getPlans({ page = 1, limit = 10, filters }) {
     if (!res.success) {
         throw new Error(res.message);
     }
-    console.log("\n##### res ########\n", res, "\n#############\n");
 
     return { data: res.data, pagination: res.pagination };
 }

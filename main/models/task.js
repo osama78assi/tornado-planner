@@ -24,11 +24,6 @@ Task.init(
             type: DataTypes.STRING(100),
             allowNull: true,
         },
-        // This will be deleted DON'T rely on it
-        metadata: {
-            type: DataTypes.JSON,
-            allowNull: false,
-        },
         planId: {
             type: DataTypes.BIGINT,
             allowNull: false,
@@ -86,7 +81,7 @@ Task.init(
 Task.belongsToMany(Attribute, {
     through: Value,
     // [label]
-    as: "metadata_v1",
+    as: "metadata",
     foreignKey: "taskId",
     otherKey: "attributeId",
     onDelete: "CASCADE",

@@ -6,12 +6,14 @@ import Plans from "../components/plan/Plans";
 import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
 import { createPlan, getPlans } from "../api/plan";
 import Modal from "../components/ui/Modal";
-import { useState } from "react";
+import { useState, useLayoutEffect } from "react";
 import PlanForm from "../components/plan/PlanForm";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setCurrentPage } from "../state/navigator";
 
 function WorkspaceP() {
-    // We need to fetch plans for the selected workspace
+    const dispatch = useDispatch();
     const { workspaceId } = useParams();
     const { elementRef, data, setData, loading } = useInfiniteScrolling({
         fetchFunction: getPlans,
@@ -19,6 +21,10 @@ function WorkspaceP() {
         filters: { workspaceId },
     });
     const [isOpen, setIsOpen] = useState(false);
+
+    useLayoutEffect(() => {
+        dispatch(setCurrentPage("workspace"));
+    }, [dispatch]);
 
     async function handleSubmit(values) {
         try {
@@ -28,7 +34,7 @@ function WorkspaceP() {
 
             toast.success("New plan created successfully");
 
-            setIsOpen(false)
+            setIsOpen(false);
         } catch (err) {
             toast.error(err.message);
             throw err;

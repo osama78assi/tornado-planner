@@ -87,7 +87,7 @@ class TaskServices {
                 // Get the plan
                 const plan = (
                     await Task.findByPk(id, {
-                        attributes: ["id", "metadata"],
+                        attributes: ["id"],
                         include: [
                             {
                                 model: Plan,
@@ -111,7 +111,7 @@ class TaskServices {
                 valuesToCreate = await this._sanitize(
                     plan,
                     payload.metadata,
-                    () => id,
+                    () => id, // Just pass the id
                 );
                 // Upsert the values
                 await metadataServices.upsertValues(
@@ -140,7 +140,7 @@ class TaskServices {
         }
     }
 
-    async get(page = 1, limit = 10, filters = null) {
+    async getAll(page = 1, limit = 10, filters = null) {
         try {
             // Parse sequelize where statement
             let where = null;
@@ -162,7 +162,7 @@ class TaskServices {
                 include: [
                     {
                         model: Attribute,
-                        as: "metadata_v1",
+                        as: "metadata",
                     },
                 ],
                 limit: safeLimit,
@@ -199,7 +199,7 @@ class TaskServices {
                 include: [
                     {
                         model: Attribute,
-                        as: "metadata_v1",
+                        as: "metadata",
                         through: {
                             attributes: ["value"],
                         },
@@ -264,7 +264,7 @@ class TaskServices {
             const pages = Math.ceil(count / limit);
 
             return {
-                data,
+                data: this._reshape(data),
                 pagination: { pages, count },
             };
         } catch (err) {
@@ -315,13 +315,13 @@ class TaskServices {
         // Prepare the columns
         task.columns = {};
         task.dataValues.columns = task.columns;
-        task.metadata_v1.forEach((column, i) => {
+        task?.metadata?.forEach((column, i) => {
             task.columns[column.key] = column.Value.value;
         });
 
         // Make it readable in the frontend
-        delete task.metadata_v1;
-        delete task.dataValues.metadata_v1;
+        delete task.metadata;
+        delete task.dataValues.metadata;
 
         return task;
     }
@@ -382,6 +382,7 @@ class TaskServices {
 
             // Update the object to create
             return valuesToCreate.map((attr) => ({
+                planId: plan.id,
                 attributeId: attr.attributeId,
                 taskId,
                 value: columnsLookup[attr.key], // Get the value

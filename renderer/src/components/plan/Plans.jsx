@@ -1,10 +1,8 @@
-import { getPlans } from "../../api/plan";
-import useInfiniteScrolling from "../../hooks/useInfiniteScrolling";
 import Tag from "../ui/Tag";
 import PlanItem from "./PlanItem";
 import { memo } from "react";
 
-const Plans = memo(function Plans({ elementRef, data, setData, loading }) {
+const Plans = memo(function Plans({ data, setData, loading }) {
     return (
         <div className="flex flex-col gap-4 overflow-auto">
             {data.length ? (
@@ -20,8 +18,6 @@ const Plans = memo(function Plans({ elementRef, data, setData, loading }) {
                     Clean. Start by creating a Plan...
                 </Tag>
             ) : null}
-
-            <div ref={elementRef} style={{ height: "1px" }} />
         </div>
     );
 });

@@ -111,7 +111,7 @@ function Schema({
                             // Update the old name to be as the first name
                             oldSchemaName.current = e.target.value;
                         }}
-                        className="rounded-lg! w-full! h-10! disabled:grayscale-[1]!"
+                        className="w-full! h-10! disabled:grayscale-[1]!"
                         id={name}
                         defaultValue={validate(name) ? "" : name}
                     />
@@ -134,7 +134,7 @@ function Schema({
                             active: schema.value === type,
                         }))}
                         label="Select schema type"
-                        onSelect={(type, _, forceClose) => {
+                        onSelect={({ option: type, forceClose }) => {
                             onChange?.({
                                 originalSchema: name,
                                 fromSchema: oldSchemaName.current,
@@ -142,7 +142,6 @@ function Schema({
                                 value: type.value,
                             });
                             if (type.value === "date") {
-                                console.log("why ?");
                                 onChange?.({
                                     originalSchema: name,
                                     fromSchema: oldSchemaName.current,
@@ -161,7 +160,7 @@ function Schema({
                             }
                             forceClose();
                         }}
-                        className={`basis-full! w-full! h-10! rounded-lg disabled:grayscale-[1]`}
+                        className={`basis-full! w-full! h-10! disabled:grayscale-[1]`}
                         optionOptions={{
                             className: "p-1 first-letter:uppercase",
                         }}
@@ -191,11 +190,11 @@ function Schema({
                             Select the date format
                         </label>
                         <Dropdown
-                            className="rounded-lg! px-4! py-2!"
+                            className="px-4! py-2!"
                             options={dateFormats}
                             label="Select format"
                             optionOptions={{ className: "p-3" }}
-                            onSelect={(option, _, forceClose) => {
+                            onSelect={({ option, forceClose }) => {
                                 onChange?.({
                                     originalSchema: name,
                                     fromSchema: oldSchemaName.current,
@@ -229,8 +228,7 @@ function CheckInput({
             </label>
             <Input.InputwithActions
                 parentProps={{
-                    className:
-                        "rounded-lg! w-full! h-10! disabled:graysacle-[1]",
+                    className: "w-full! h-10! disabled:graysacle-[1]",
                 }}
                 inputProps={{
                     ref: checkInputRef,
@@ -305,7 +303,7 @@ function CheckInput({
                                     );
                                 },
                             }))}
-                            className="rounded-none! p-0!"
+                            className="p-0!"
                         />
 
                         <Button

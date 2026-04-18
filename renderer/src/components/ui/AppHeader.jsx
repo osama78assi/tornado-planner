@@ -1,11 +1,25 @@
-import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import WorkspaceHeader from "../workspace/WorkspaceHeader";
+import PlansHeader from "../plan/PlansHeader";
+import { getPageFromPath } from "../../util/main";
 
 function AppHeader() {
-    const { currentPage } = useSelector((state) => state.navigator);
+    const location = useLocation();
+
+    // Determine current page from pathname
+    const currentPage = getPageFromPath(location.pathname);
 
     if (currentPage === "home") {
         return <WorkspaceHeader />;
+    }
+
+    if (["plans", "plan"].includes(currentPage)) {
+        return <PlansHeader />;
+    }
+
+
+    if (currentPage === "settings") {
+        return <div className="flex items-center gap-2" />;
     }
 
     return (

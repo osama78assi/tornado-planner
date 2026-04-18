@@ -2,28 +2,23 @@ import { createWorkspace, getWorkspaces } from "../api/workspace";
 import WorkspaceItem from "../components/workspace/WorkspaceItem";
 import Button from "../components/ui/Button";
 import Header from "../components/ui/Header";
-import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
-import { useState, useLayoutEffect } from "react";
+import useData from "../hooks/useData";
+import { useState } from "react";
 import Modal from "../components/ui/Modal";
 import WorkspaceForm from "../components/workspace/WorkspaceForm";
 import toast from "react-hot-toast";
 import Tag from "../components/ui/Tag";
 import Workspaces from "../components/workspace/Workspaces";
-import { getDayStatus } from "../util/main";
-import { useDispatch } from "react-redux";
-import { setCurrentPage } from "../state/navigator";
+import { getDayStatus, getSettingsSync } from "../util/main";
+import { getConstantsSnyc } from "../util/constants";
 
 function WorkspacesP() {
-    const dispatch = useDispatch();
-    const { elementRef, data, setData, loading } = useInfiniteScrolling({
+    const { data, setData, loading } = useData({
         fetchFunction: getWorkspaces,
-        limit: 10,
     });
     const [isOpen, setIsOpen] = useState(false);
 
-    useLayoutEffect(() => {
-        dispatch(setCurrentPage("home"));
-    }, [dispatch]);
+    console.log(getConstantsSnyc());
 
     async function handleCreateWorkspace(data) {
         try {
@@ -69,12 +64,7 @@ function WorkspacesP() {
                 </Button.IconButton>
             </Header>
 
-            <Workspaces
-                data={data}
-                setData={setData}
-                loading={loading}
-                elementRef={elementRef}
-            />
+            <Workspaces data={data} setData={setData} loading={loading} />
 
             {/* Render the modal to add a new workspace */}
             <Modal

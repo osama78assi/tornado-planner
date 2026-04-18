@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, nativeTheme } from "electron";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { connectDB } from "./config/sequelize.js";
@@ -16,11 +16,13 @@ import planServices from "./handlers/plan.js";
 import folderHandlers from "./handlers/folder.js";
 import taskHandlers from "./handlers/task.js";
 import notesHandlers from "./handlers/note.js";
+import settingsHandlers from "./handlers/settings.js";
 import {
     getDefaultMetadata,
     DEFAULT_SCHEMA_TYPES,
     DATE_FORMATS,
 } from "./config/constant.js";
+import { __dir } from "./util/global.js";
 
 // Global variables
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,7 +32,8 @@ function createWindow() {
         width: 800,
         height: 800,
         minHeight: 600,
-        minWidth: 500,
+        minWidth: 600,
+        icon: join(__dir(import.meta.url), "/assets/logo.ico"),
         webPreferences: {
             preload: join(__dirname, "../preload/preload.js"),
         },
@@ -79,8 +82,11 @@ function initWorkspacesApi() {
 
     ipcMain.handle(
         channels.workspaces.get,
-        async (_, page = 1, limit = 10, filters = null) => {
-            return await workspaceHandlers.get(page, limit, filters);
+        async (
+            _,
+            { page = 1, limit = 10, filters = null, loadAll = false },
+        ) => {
+            return await workspaceHandlers.get(page, limit, filters, loadAll);
         },
     );
 
@@ -100,8 +106,11 @@ function initPlansApi() {
 
     ipcMain.handle(
         channels.plans.get,
-        async (_, page = 1, limit = 10, filters = null) => {
-            return await planServices.get(page, limit, filters);
+        async (
+            _,
+            { page = 1, limit = 10, filters = null, loadAll = false },
+        ) => {
+            return await planServices.get(page, limit, filters, loadAll);
         },
     );
 
@@ -121,8 +130,11 @@ function initFoldersApi() {
 
     ipcMain.handle(
         channels.folders.get,
-        async (_, page = 1, limit = 10, filters = null) => {
-            return await folderHandlers.get(page, limit, filters);
+        async (
+            _,
+            { page = 1, limit = 10, filters = null, loadAll = false },
+        ) => {
+            return await folderHandlers.get(page, limit, filters, loadAll);
         },
     );
 
@@ -142,8 +154,23 @@ function initTasksApi() {
 
     ipcMain.handle(
         channels.tasks.get,
-        async (_, page = 1, limit = 10, filters = null, search = false) => {
-            return await taskHandlers.get(page, limit, filters, search);
+        async (
+            _,
+            {
+                page = 1,
+                limit = 10,
+                filters = null,
+                search = false,
+                loadAll = false,
+            },
+        ) => {
+            return await taskHandlers.get(
+                page,
+                limit,
+                filters,
+                search,
+                loadAll,
+            );
         },
     );
 
@@ -163,8 +190,23 @@ function initNotesApi() {
 
     ipcMain.handle(
         channels.notes.get,
-        async (_, page = 1, limit = 10, filters = null, search = false) => {
-            return await notesHandlers.get(page, limit, filters, search);
+        async (
+            _,
+            {
+                page = 1,
+                limit = 10,
+                filters = null,
+                search = false,
+                loadAll = false,
+            },
+        ) => {
+            return await notesHandlers.get(
+                page,
+                limit,
+                filters,
+                search,
+                loadAll,
+            );
         },
     );
 
@@ -180,6 +222,14 @@ function initNotesApi() {
 function initSettingsApi() {
     ipcMain.handle(channels.settings.get, async () => {
         return getApplicationSettingsSync();
+    });
+
+    ipcMain.handle(channels.settings.pickBackupFolder, async () => {
+        return await settingsHandlers.pickBackupFolder();
+    });
+
+    ipcMain.handle(channels.settings.exportBackup, async (_, destination) => {
+        return await settingsHandlers.exportBackup(destination);
     });
 }
 

@@ -32,14 +32,6 @@ Task.init(
                 key: "id",
             },
         },
-        folderId: {
-            type: DataTypes.BIGINT,
-            allowNull: true,
-            references: {
-                model: "folders",
-                key: "id",
-            },
-        },
         completed: {
             type: DataTypes.BOOLEAN,
             allowNull: false,

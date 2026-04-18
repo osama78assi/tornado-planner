@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { formatDate } from "../../util/main";
+import { useDispatch } from "react-redux";
+import { clearNonSerializable, formatDate } from "../../util/main";
 import Icon from "../ui/Icon";
 import { FaEdit } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
@@ -7,14 +8,19 @@ import { useRef, useState } from "react";
 import WorkspaceForm from "./WorkspaceForm";
 import Modal from "../ui/Modal";
 import { updateWorkspace } from "../../api/workspace";
+import { setCurrentWorkspace } from "../../state/workspaces";
 import toast from "react-hot-toast";
 
 function WorkspaceItem({ updateData, workspace }) {
     const [isOpen, setIsOpen] = useState(false);
     const nav = useNavigate();
+    const dispatch = useDispatch();
     // /workspaces/:workpaceId/plans
 
     function handleClick() {
+        // Remove unserializable fields before dispatching to Redux
+        const serializableWorkspace = { ...workspace };
+        dispatch(setCurrentWorkspace(clearNonSerializable(serializableWorkspace)));
         nav(`/workspaces/${workspace.id}/plans`);
     }
 

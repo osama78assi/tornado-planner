@@ -3,10 +3,14 @@ import Icon from "../ui/Icon";
 import Loading from "../ui/Loading";
 import toast from "react-hot-toast";
 import { getWorkspaces } from "../../api/workspace";
+import { setCurrentWorkspace } from "../../state/workspaces";
+import { useDispatch } from "react-redux";
+import { clearNonSerializable } from "../../util/main";
 
 function WorkspaceCardHeader({ id }) {
     const [loading, setLoading] = useState(true);
     const [workspace, setWorkspace] = useState({});
+        const dispatch = useDispatch();
 
     useEffect(() => {
         async function fetchWorkspace() {
@@ -19,6 +23,12 @@ function WorkspaceCardHeader({ id }) {
                 });
 
                 setWorkspace(workspace);
+                // Set it to the global state
+                const cloned = { ...workspace };
+                clearNonSerializable(cloned);
+
+                // Update the selected workspace without affecting it
+                dispatch(setCurrentWorkspace(cloned));
             } catch (err) {
                 toast.error(
                     err.message ||

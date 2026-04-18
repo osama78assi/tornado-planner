@@ -51,6 +51,7 @@
 
 #root {
     position: relative;
+    overflow: hidden;
 }
 
 * {
@@ -148,17 +149,13 @@
     @apply h-[calc(100dvh-(var(--spacing)*7.5))] flex relative overflow-auto;
 }
 
-#back-btn:hover > :first-child {
-    transform: translateX(-2px);
-}
-
 /* Main Application */
 .sidebar {
-    @apply border-e border-(--main-divider-color) bg-(--secondary-color) w-40 transition-[width]  h-[100%];
+    @apply z-[10] border-e border-(--main-divider-color) bg-(--secondary-color) w-40 transition-[width]  h-[100%];
 }
 
 .main-content {
-    @apply bg-(--main-color) w-[calc(100%-var(--spacing)*40)] transition-[width];
+    @apply bg-(--main-color) w-[calc(100%-var(--spacing)*40)] transition-[width] overflow-auto;
 }
 
 .main-content_header {
@@ -171,7 +168,7 @@
 }
 
 .sidebar-header {
-    @apply p-3 flex justify-between items-center border-b border-b-[var(--main-divider-color)] h-[70px];
+    @apply p-1 flex justify-between items-center border-b border-b-[var(--main-divider-color)] h-[70px];
 }
 
 .nav-item {
@@ -222,50 +219,66 @@
 
 /* Tables */
 
-.tasktable-container {
-    @apply w-full h-full overflow-auto border;
+.tornado-table-container {
+    @apply overflow-auto border w-fit;
     border-color: var(--main-divider-color);
     background: var(--secondary-color);
 }
 
-.tasktable {
-    @apply w-full border-collapse table-fixed!; /* table-fixed is important for truncation */
+.tornado-table {
+    @apply w-full border-collapse table-fixed!;
     color: var(--secondary-text-color);
 }
 
-.tasktable-thead {
+.tornado-table-thead {
     background: var(--thirdary-color);
 }
 
-.tasktable-thead.sticky {
-    @apply sticky top-0 z-10;
+.tornado-table-thead.sticky {
+    @apply sticky top-0 z-55!;
 }
 
-.tasktable-th {
+.tornado-table-th {
     @apply text-left px-4 py-3 font-medium;
     color: var(--main-text-color);
     border-bottom: 1px solid var(--main-divider-color);
 }
 
 /* Add right border to header cells except last */
-.tasktable-th:not(:last-child) {
+.tornado-table-th:not(:last-child) {
     @apply border-e border-e-(--main-divider-color)!;
 }
 
-.tasktable-td {
+.tornado-table-td {
     @apply px-4 py-3;
     border-bottom: 1px solid var(--main-divider-color);
 }
 
 /* Add right border to body cells except last */
-.tasktable-td:not(:last-child) {
+.tornado-table-td:not(:last-child) {
     @apply border-e border-e-(--main-divider-color)!;
 }
 
-.tasktable-tr {
+.tornado-table-tr {
     @apply transition-colors duration-150;
 }
 
-.tasktable-tr:hover {
+.tornado-table-tr:hover {
     background: var(--shallow-color);
+}
+
+.tornado-table-td_form {
+    @apply p-2!;
+}
+
+@media (min-width: 700px) {
+    .setting-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .setting-container > div:last-child {
+        min-width: 300px;
+    }
 }

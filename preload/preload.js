@@ -13,13 +13,22 @@ const { contextBridge, ipcRenderer } = require("electron");
 
     contextBridge.exposeInMainWorld("settings", {
         get: () => ipcRenderer.invoke(channels.settings.get),
+        pickBackupFolder: () =>
+            ipcRenderer.invoke(channels.settings.pickBackupFolder),
+        exportBackup: (destination) =>
+            ipcRenderer.invoke(channels.settings.exportBackup, destination),
     });
 
     contextBridge.exposeInMainWorld("workspaces", {
         create: (payload) =>
             ipcRenderer.invoke(channels.workspaces.create, payload),
-        get: ({ page, limit, filters }) =>
-            ipcRenderer.invoke(channels.workspaces.get, page, limit, filters),
+        get: ({ page, limit, filters, loadAll }) =>
+            ipcRenderer.invoke(channels.workspaces.get, {
+                page,
+                limit,
+                filters,
+                loadAll,
+            }),
         update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.workspaces.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.workspaces.destroy, id),
@@ -27,8 +36,13 @@ const { contextBridge, ipcRenderer } = require("electron");
 
     contextBridge.exposeInMainWorld("plans", {
         create: (payload) => ipcRenderer.invoke(channels.plans.create, payload),
-        get: ({ page, limit, filters }) =>
-            ipcRenderer.invoke(channels.plans.get, page, limit, filters),
+        get: ({ page, limit, filters, loadAll }) =>
+            ipcRenderer.invoke(channels.plans.get, {
+                page,
+                limit,
+                filters,
+                loadAll,
+            }),
         update: ({ id, payload, keyMapper }) =>
             ipcRenderer.invoke(channels.plans.update, id, payload, keyMapper),
         destroy: (id) => ipcRenderer.invoke(channels.plans.destroy, id),
@@ -37,8 +51,13 @@ const { contextBridge, ipcRenderer } = require("electron");
     contextBridge.exposeInMainWorld("folders", {
         create: (payload) =>
             ipcRenderer.invoke(channels.folders.create, payload),
-        get: ({ page, limit, filters }) =>
-            ipcRenderer.invoke(channels.folders.get, page, limit, filters),
+        get: ({ page, limit, filters, loadAll }) =>
+            ipcRenderer.invoke(channels.folders.get, {
+                page,
+                limit,
+                filters,
+                loadAll,
+            }),
         update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.folders.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.folders.destroy, id),
@@ -46,14 +65,14 @@ const { contextBridge, ipcRenderer } = require("electron");
 
     contextBridge.exposeInMainWorld("tasks", {
         create: (payload) => ipcRenderer.invoke(channels.tasks.create, payload),
-        get: ({ page, limit, filters, search }) =>
-            ipcRenderer.invoke(
-                channels.tasks.get,
+        get: ({ page, limit, filters, search, loadAll }) =>
+            ipcRenderer.invoke(channels.tasks.get, {
                 page,
                 limit,
                 filters,
                 search,
-            ),
+                loadAll,
+            }),
         update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.tasks.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.tasks.destroy, id),
@@ -61,14 +80,14 @@ const { contextBridge, ipcRenderer } = require("electron");
 
     contextBridge.exposeInMainWorld("notes", {
         create: (payload) => ipcRenderer.invoke(channels.notes.create, payload),
-        get: ({ page, limit, filters, search }) =>
-            ipcRenderer.invoke(
-                channels.notes.get,
+        get: ({ page, limit, filters, search, loadAll }) =>
+            ipcRenderer.invoke(channels.notes.get, {
                 page,
                 limit,
                 filters,
                 search,
-            ),
+                loadAll,
+            }),
         update: ({ id, payload }) =>
             ipcRenderer.invoke(channels.notes.update, id, payload),
         destroy: (id) => ipcRenderer.invoke(channels.notes.destroy, id),

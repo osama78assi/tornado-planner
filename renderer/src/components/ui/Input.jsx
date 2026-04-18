@@ -1,16 +1,19 @@
-function Input({ className, ...props }) {
+import { forwardRef } from "react";
+
+const Input = forwardRef(function Input({ className, ...props }, ref) {
     return (
         <input
-            className={`bg-(--thirdary-color) flex rounded-full px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""}`}
+            ref={ref}
+            className={`bg-(--thirdary-color) flex rounded-sm px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""}`}
             {...props}
         />
     );
-}
+});
 
 function TextArea({ className, ...props }) {
     return (
         <textarea
-            className={`bg-(--thirdary-color) flex rounded-full px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""}`}
+            className={`bg-(--thirdary-color) flex rounded-sm px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""}`}
             {...props}
         />
     );
@@ -20,7 +23,7 @@ function InputIcon({ icon, inputProps, parentProps }) {
     return (
         <div
             {...parentProps}
-            className={`bg-(--thirdary-color) flex rounded-full px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] ${parentProps?.className ? parentProps?.className : ""}`}
+            className={`bg-(--thirdary-color) flex rounded-sm px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] ${parentProps?.className ? parentProps?.className : ""}`}
         >
             {icon}
             <input

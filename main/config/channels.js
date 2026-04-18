@@ -10,6 +10,8 @@ const channels = {
     settings: {
         get: "settings:get",
         update: "settings:set",
+        pickBackupFolder: "settings:pickBackupFolder",
+        exportBackup: "settings:exportBackup"
     },
 
     constants: {

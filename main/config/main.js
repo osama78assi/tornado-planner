@@ -3,26 +3,18 @@ import { join } from "path";
 import { cwd } from "process";
 import ApplicationError from "../util/applicationError.js";
 import { UNINITIALIZED_SETTINGS } from "../errors/global.js";
+import isDev from "electron-is-dev";
+import { app } from "electron";
 
 let APP_SETTINGS = null;
 
 // Check database file if exists or not and create it
 export function getDatabasePath() {
-    try {
-        const path = join(cwd(), "tornadoDB.db");
-
-        // Check if file is exists
-        const isExist = existsSync(path);
-
-        if (!isExist) {
-            // Create the file
-            writeFileSync(path, "");
-        }
-
-        return path;
-    } catch (err) {
-        console.log(err);
+    if (isDev) {
+        return join(cwd(), "tornadoDB.db");
     }
+
+    return join(app.getPath("userData"), "tornadoDB.db");
 }
 
 // If there is no settings then create one

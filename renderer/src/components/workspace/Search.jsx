@@ -36,6 +36,7 @@ function Search() {
             <Input.InputIcon
                 icon={<IoMdSearch className="text-2xl" />}
                 parentProps={{
+                    className: "rounded-full",
                     onClick: () => {
                         setTimeout(() => {
                             if (modalInputRef.current) {
@@ -67,6 +68,7 @@ function Search() {
                     <Input.InputIcon
                         icon={<IoMdSearch className="text-2xl" />}
                         parentProps={{
+                            className: "rounded-full",
                             onClick: () => {
                                 if (modalInputRef.current) {
                                     // Focus there

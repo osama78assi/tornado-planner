@@ -2,10 +2,41 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { SlArrowDown } from "react-icons/sl";
 import { createPortal } from "react-dom";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
+import Input from "./Input";
+import { createScrollDirectionDetector } from "../../util/main";
 
+const detectScroll = createScrollDirectionDetector();
+
+/**
+ * A customizable dropdown component with search functionality and smart positioning
+ *
+ * @param {Object} props - Component props
+ * @param {string} [props.label] - Default label text to display when no option is selected
+ * @param {string} [props.menuMaxHeight="200px"] - Maximum height of the dropdown menu (CSS value)
+ * @param {string} [props.menuMaxWidth=""] - Maximum width of the dropdown menu (CSS value). Leave empty to match parent width
+ * @param {string} [props.className] - Additional CSS classes to apply to the dropdown container
+ * @param {Array<{label: string, value: any, active?: boolean, render?: Function}>} [props.options] - Array of option objects to display in the dropdown
+ * @param {Function} [props.onSelect] - Callback fired when an option is selected. Receives (option, event, forceClose) as arguments
+ * @param {Function} [props.onOpen] - Callback fired when the dropdown is opened or toggled
+ * @param {React.ReactNode} [props.openBtn] - Custom button element to use instead of the default label/arrow button
+ * @param {Function} [props.labelOnActive] - Custom render function for the active item label. Receives (activeItem) as argument
+ * @param {React.ReactNode} [props.children] - Additional content to render inside the dropdown menu
+ * @param {boolean} [props.disabled=false] - Whether the dropdown is disabled
+ * @param {boolean} [props.openMenu=false] - Controls whether the dropdown menu is open (controlled mode)
+ * @param {Object} [props.menuOptions] - Additional props to pass to the dropdown menu container element
+ * @param {Object} [props.optionOptions] - Additional props to pass to each option element
+ * @param {Function} [props.onClose] - Callback fired when the dropdown menu is closed
+ * @param {boolean} [props.search=false] - Enable search/filter functionality within the dropdown
+ * @param {Function} [props.onSearch] - Callback fired when search query changes. Receives (searchQuery) as argument
+ * @param {boolean} [props.preventDefaultSearchBehavior=false] - If true, disables default search filtering and relies on onSearch callback
+ * @param {Object} [props...props] - Any additional props are spread onto the dropdown container element
+ *
+ * @returns {React.ReactElement} The dropdown component
+ */
 function Dropdown({
     label,
     menuMaxHeight = "200px",
+    menuMaxWidth = "", // Leave empty when not used
     className,
     options,
     onSelect,
@@ -17,15 +48,25 @@ function Dropdown({
     openMenu = false,
     menuOptions,
     optionOptions,
+    onClose,
+    search = false,
+    onSearch,
+    preventDefaultSearchBehavior = false,
     ...props
 }) {
     const [open, setOpen] = useState(openMenu);
     const [innerOptions, setInnerOptions] = useState(() =>
         options?.map((opt) => ({ ...opt, __id: Math.random() })),
     );
+    // Keep reference to original options for search filtering
+    const [originalOptions, setOriginalOptions] = useState(() =>
+        options?.map((opt) => ({ ...opt, __id: Math.random() })),
+    );
+    const [searchQuery, setSearchQuery] = useState("");
     const activeItem = innerOptions?.filter((option) => option.active)?.at(-1);
     const id = useId();
     const intialRender = useRef(true);
+    const searchInputRef = useRef(null);
 
     // To handle render the dropdown menu even if the parent have overflow hidden or scroll to not scroll the parent
     const parentRef = useRef(null);
@@ -36,15 +77,22 @@ function Dropdown({
         }
 
         setOpen(false);
+        // Reset search query when closing
+        if (search) setSearchQuery("");
+        onClose?.();
     });
     const lockedPosition = useRef(null);
 
-    // Sync the changes
+    // Sync the changes and update both inner and original options
     useLayoutEffect(() => {
-        if (options)
-            setInnerOptions(
-                options.map((opt) => ({ ...opt, __id: Math.random() })),
-            );
+        if (options) {
+            const mappedOptions = options.map((opt) => ({
+                ...opt,
+                __id: Math.random(),
+            }));
+            setInnerOptions(mappedOptions);
+            setOriginalOptions(mappedOptions);
+        }
     }, [options]);
 
     useEffect(() => {
@@ -57,6 +105,38 @@ function Dropdown({
         // Sync
         setOpen(openMenu);
     }, [openMenu]);
+
+    // Auto-focus search input when dropdown opens
+    useEffect(() => {
+        if (search && open && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [open, search]);
+
+    // Handle search query changes
+    useEffect(() => {
+        if (!search) return;
+
+        // If preventDefaultSearchBehavior is true, just call the callback
+        if (preventDefaultSearchBehavior) {
+            onSearch?.(searchQuery);
+            return;
+        }
+
+        // Default search behavior: filter by label
+        if (!searchQuery.trim()) {
+            setInnerOptions(originalOptions);
+            onSearch?.("");
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const filtered = originalOptions.filter((option) =>
+            option.label?.toLowerCase().includes(query),
+        );
+        setInnerOptions(filtered);
+        onSearch?.(searchQuery);
+    }, [searchQuery, originalOptions, search, preventDefaultSearchBehavior]);
 
     // When the user scroll or resize the window keep the menu in sync with the parent
     useLayoutEffect(() => {
@@ -80,18 +160,71 @@ function Dropdown({
                 menu.style.top = `${parentPosition.top - Math.min(menuPosition.height, parseFloat(menuMaxHeight))}px`;
             }
 
-            // When a scroll happen there is a problem with pixels happen so here it solved, if it happen in another thing just freez it here and reuse it
-            if (!lockedPosition.current) {
-                menu.style.left = `${parentPosition.left}px`;
+            // Detect the scroll direction (x-axis or y-axis)
+            const direction = detectScroll(window.scrollX, window.scrollY);
 
-                lockedPosition.current = {
-                    left: parentPosition.left,
-                };
+            // === HORIZONTAL POSITIONING (Left/Right) ===
+            // Calculate the required width for the menu
+            const requiredWidth = Math.min(
+                parseFloat(menuMaxWidth),
+                menuPosition.width,
+            );
+            // Calculate available space to the right of the parent
+            const spaceRight = window.innerWidth - parentPosition.right;
+
+            // Check if there's enough space on the right side (with 30px threashold)
+            if (spaceRight > requiredWidth + 50) {
+                // CASE 1: Enough space on the right side
+
+                // If scrolling vertically (Y-axis), use locked position to prevent jitter
+                if (direction === "y") {
+                    // Apply previously locked position if it exists
+                    if (lockedPosition.current.left) {
+                        menu.style.left = `${lockedPosition.current.left}px`;
+                    } else if (lockedPosition.current.right) {
+                        menu.style.right = `${lockedPosition.current.right}px`;
+                    }
+                } else {
+                    // If scrolling horizontally (X-axis) or initial render, update position
+                    // Align menu with parent's left edge
+                    menu.style.left = `${parentPosition.left}px`;
+
+                    // Lock this position for future Y-axis scrolling
+                    lockedPosition.current = {
+                        left: parentPosition.left,
+                    };
+                }
             } else {
-                menu.style.left = `${lockedPosition.current.left}px`;
+                // CASE 2: Not enough space on the right side
+                // If there is a locked position with left then it was rendered initiall and the user scorlled
+
+                // If scrolling vertically (Y-axis), use locked position to prevent jitter
+                if (direction === "y") {
+                    // Apply previously locked position if it exists
+                    if (lockedPosition.current.left) {
+                        menu.style.left = `${lockedPosition.current.left}px`;
+                    } else if (lockedPosition.current.right) {
+                        menu.style.right = `${lockedPosition.current.right}px`;
+                    }
+                } else {
+                    // If scrolling horizontally (X-axis) or initial render, update position
+                    // Align menu with parent's right edge (extends to the left)
+                    menu.style.right = `${window.innerWidth - parentPosition.right}px`;
+                    menu.style.removeProperty("left");
+                    if (lockedPosition?.current?.left)
+                        delete lockedPosition.current.left;
+
+                    // Lock this position for future Y-axis scrolling
+                    lockedPosition.current = {
+                        right: 0,
+                    };
+                }
             }
 
-            menu.style.width = `${parentPosition.width}px`;
+            // Apply the menu styles
+            if (menuMaxWidth === "")
+                menu.style.width = `${parentPosition.width}px`;
+            else menu.style.width = `${parseFloat(menuMaxWidth)}px`;
 
             menu.style.maxHeight = menuMaxHeight;
         }
@@ -125,17 +258,32 @@ function Dropdown({
     }
 
     function handleBlurP(e) {
-        // If click came from menu, ignore. use relatedTarget to get the element that will be focused
+        // If click came from menu, ignore. use relatedTarget to get the element that will be focused.
+        // Or in case when the element that recived focus isn't a valid element, at this time outsideClick will hendle it
         if (
-            menuRef.current &&
-            e.relatedTarget &&
-            e.relatedTarget.closest('[role="listbox"]') === menuRef.current
+            (menuRef.current &&
+                e.relatedTarget &&
+                e.relatedTarget.closest('[role="listbox"]') ===
+                    menuRef.current) ||
+            e.relatedTarget === null
+        ) {
+            return;
+        }
+
+        // If blur is going to search input, don't close the dropdown
+        if (
+            search &&
+            searchInputRef.current &&
+            e.relatedTarget === searchInputRef.current
         ) {
             return;
         }
 
         onOpen?.(e);
         setOpen(false);
+        // Reset search query when closing
+        if (search) setSearchQuery("");
+        onClose?.();
     }
 
     function handleKeyStrokeP(e) {
@@ -153,7 +301,7 @@ function Dropdown({
     }
 
     function handleSelect(e, option) {
-        onSelect?.(option, e, forceClose);
+        onSelect?.({ option, event: e, forceClose });
 
         // setActive(option);
         setInnerOptions((opts) =>
@@ -200,6 +348,7 @@ function Dropdown({
             e.preventDefault();
             // Clsoe the menu
             setOpen(false);
+            onClose?.();
             // Focus on the menu
             parentRef.current.focus();
         }
@@ -207,6 +356,7 @@ function Dropdown({
         if (e.key === "Escape") {
             e.preventDefault();
             setOpen(false);
+            onClose?.();
             const parent = parentRef.current;
             if (parent) parent.current?.focus();
         }
@@ -214,7 +364,10 @@ function Dropdown({
 
     // Pass it to parent
     function forceClose() {
+        console.log("RF");
+
         setOpen(false);
+        onClose?.();
         const parent = parentRef.current;
         if (parent) parent.focus();
     }
@@ -243,7 +396,7 @@ function Dropdown({
         <div
             {...props}
             role="select"
-            className={`relative bg-(--thirdary-color) cursor-pointer flex rounded-full px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""} ${disabled ? "grayscale-[1] cursor-not-allowed!" : ""}`}
+            className={`relative bg-(--thirdary-color) cursor-pointer flex rounded-sm px-4 py-2 gap-2 border-0 transition-all focus-within:shadow-[0_0_10px_var(--main-interactive-color-v3)] focus:outline-0! focus-within:outline-0! text-l w-full ${className ? className : ""} ${disabled ? "grayscale-[1] cursor-not-allowed!" : ""}`}
             // When you want to handle the foucs the same as click use onMousedown because it fires before the focus
             onClick={handleClickP}
             ref={parentRef}
@@ -257,8 +410,18 @@ function Dropdown({
                 openBtn
             ) : (
                 <div className="flex w-full justify-between items-center gap-1 first-letter:capitalize">
-                    {/* Render what is available */}
-                    {labelToRender}
+                    {/* Render search input or label */}
+                    {search && open ? (
+                        <Input
+                            ref={searchInputRef}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search..."
+                            className="w-full! bg-transparent! outline-none! text-l! border-none! px-0! py-0! shadow-none! focus-within:shadow-none!"
+                        />
+                    ) : (
+                        labelToRender
+                    )}
 
                     <SlArrowDown
                         fontSize="12px"
@@ -272,7 +435,7 @@ function Dropdown({
                 ? createPortal(
                       <div
                           {...menuOptions}
-                          className={`absolute flex flex-col cursor-pointer border border-(--main-divider-color) text-(--main-text-color) bg-(--thirdary-color) z-2 divide-y-2 divide-(--main-divider-color) overflow-y-scroll ${menuOptions?.className ? menuOptions.className : ""}`}
+                          className={`absolute flex flex-col cursor-pointer border border-(--main-divider-color) text-(--main-text-color) bg-(--thirdary-color) z-[999] divide-y-2 divide-(--main-divider-color) overflow-y-scroll ${menuOptions?.className ? menuOptions.className : ""}`}
                           ref={menuRef}
                           role="listbox"
                       >

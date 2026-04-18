@@ -1,18 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { MdKeyboardBackspace } from "react-icons/md";
+import { IoIosArrowBack } from "react-icons/io";
+import Button from "./Button";
 
-function BackBtn() {
+function BackBtn({ className }) {
     const nav = useNavigate();
     return (
-        <div
-            role="button"
-            className="flex p-[0.2rem] rounded-lg justify-between items-center cursor-pointer gap-1 transition-all"
-            onClick={() => nav(-1, { replace: true })}
-            id="back-btn"
-        >
-            <MdKeyboardBackspace />
-            <span>Back</span>
-        </div>
+        <Button.BadgeBtn
+            icon={
+                <IoIosArrowBack className="text-(--main-interactive-color-v1)" />
+            }
+            handleClick={() => nav(-1, { replace: true })}
+            className={className}
+        />
     );
 }
 

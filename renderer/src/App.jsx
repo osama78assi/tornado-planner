@@ -6,6 +6,7 @@ import WorkspacesP from "./pages/WorkspacesP";
 import PlanP from "./pages/PlanP";
 import NotFoundP from "./pages/NotFoundP";
 import WorkspaceP from "./pages/WorkspaceP";
+import SettingsP from "./pages/SettingsP";
 
 function App() {
     return (
@@ -30,6 +31,8 @@ function App() {
                     path="/workspaces/:workspaceId/notes/:noteId"
                     element={<NoteP />}
                 />
+
+                <Route path="/settings" element={<SettingsP />} />
 
                 <Route path="*" element={<NotFoundP />} />
             </Route>

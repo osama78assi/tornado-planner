@@ -61,3 +61,9 @@ export const UNINITIALIZED_SETTINGS = new ApplicationError({
     message: "Settings not initialized",
     code: "UNINITIALIZED_SETTINGS",
 });
+
+export const ALLOCATED_COLUMNS = (key) =>
+    new ApplicationError({
+        message: `The schema name '${key}' is already allocated before`,
+        code: "ALLOCATED_COLUMNS",
+    });

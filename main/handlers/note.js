@@ -16,15 +16,23 @@ class NoteHandlers {
         }
     }
 
-    async get(page = 1, limit = 10, filters = null, search = false) {
+    async get(
+        page = 1,
+        limit = 10,
+        filters = null,
+        search = false,
+        loadAll = false,
+    ) {
         try {
-            // This will throw an error in case not valid
-            checkPagination(page, limit);
+            // This will throw an error in case not valid (skip if loadAll)
+            if (!loadAll) {
+                checkPagination(page, limit);
+            }
 
             let results;
 
             if (!search) {
-                results = await noteServices.get(page, limit, filters);
+                results = await noteServices.get(page, limit, filters, loadAll);
             } else {
                 // The different here that this function will include all related models to provide more information. as an optimization
                 results = await noteServices.search(page, limit, filters);

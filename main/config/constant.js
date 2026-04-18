@@ -6,6 +6,7 @@ import {
     MISSING_ATTR_TYPE,
     INVALID_SCHEMA_VALUES_USAGE,
     INVALID_DATE_FORMAT,
+    ALLOCATED_COLUMNS
 } from "../errors/global.js";
 import ApplicationError from "../util/applicationError.js";
 import {
@@ -17,6 +18,9 @@ import {
 export function isValidSchemaKey(key) {
     if (typeof key === "string" && (key.length > 60 || key.length === 0)) {
         throw INVALID_SCHEMA_KEY;
+    }
+    if (["title", "description"].includes(key)) {
+        throw ALLOCATED_COLUMNS(key);
     }
 }
 

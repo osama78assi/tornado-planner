@@ -16,12 +16,19 @@ class FolderHandlers {
         }
     }
 
-    async get(page = 1, limit = 10, filters = null) {
+    async get(page = 1, limit = 10, filters = null, loadAll = false) {
         try {
-            // This will throw an error in case not valid
-            checkPagination(page, limit);
+            // This will throw an error in case not valid (skip if loadAll)
+            if (!loadAll) {
+                checkPagination(page, limit);
+            }
 
-            const results = await folderServices.get(page, limit, filters);
+            const results = await folderServices.get(
+                page,
+                limit,
+                filters,
+                loadAll,
+            );
 
             return {
                 success: true,

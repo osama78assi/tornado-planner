@@ -102,7 +102,7 @@ function PlanForm({
 
         // Save the map and send it to parent in case it's update operation so you know what have changed
         mapSetter?.(keyMapper.current);
-        
+
         // Lover over the metadata and replace with the map. This key will always be sent
         Object.keys(toSend.metadata).forEach((key) => {
             const newKey = keyMapper.current[key];
@@ -151,7 +151,7 @@ function PlanForm({
                 <Input
                     disabled={loading}
                     id="workspace-name"
-                    className="basis-2/3 px-2! py-2! rounded-2xl!"
+                    className="basis-2/3 px-2! py-2!"
                     onChange={(e) => {
                         if (e.target.value) form.current.name = e.target.value;
                         else form.current.name = null;
@@ -170,7 +170,7 @@ function PlanForm({
                 <Input.TextArea
                     disabled={loading}
                     id="workspace-name"
-                    className="basis-2/3 px-2! py-2! rounded-2xl! resize-none"
+                    className="basis-2/3 px-2! py-2! resize-none"
                     onChange={(e) => {
                         if (e.target.value)
                             form.current.description = e.target.value;

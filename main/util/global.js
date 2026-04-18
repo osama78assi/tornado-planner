@@ -4,6 +4,8 @@ import {
     INVALID_PAGINATION_LIMIT,
     INVALID_PAGINATION_PAGE,
 } from "../errors/global.js";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 export function getSafeLimit(limit) {
     if (limit < 100) return limit;
@@ -59,7 +61,6 @@ export const opMapper = {
     in$: Op.in,
 };
 
-
 // Either concat fields so we need to return an array, or normal field to return an object
 function keyContainer(key) {
     if (!["and$", "or$"].includes(field)) {
@@ -80,7 +81,7 @@ function innerMap(obj) {
     let results;
     const objType = Object.prototype.toString.call(obj);
     // Case1: The obj is primitve
-    if ( objType !== "[object Object]" && objType !== "[object Array]" ) {
+    if (objType !== "[object Object]" && objType !== "[object Array]") {
         return obj; // Return it as it is
     }
 
@@ -154,4 +155,8 @@ export function checkPagination(page, limit) {
     if (typeof page !== "number") throw INVALID_PAGINATION_PAGE;
 
     if (typeof limit !== "number") throw INVALID_PAGINATION_LIMIT;
+}
+
+export function __dir(url) {
+    return dirname(fileURLToPath(url));
 }

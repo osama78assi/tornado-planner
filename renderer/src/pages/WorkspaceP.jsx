@@ -3,28 +3,20 @@ import Header from "../components/ui/Header";
 import { useParams } from "react-router-dom";
 import WorkspaceCardHeader from "../components/workspace/WorkspaceCardHeader";
 import Plans from "../components/plan/Plans";
-import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
+import useData from "../hooks/useData";
 import { createPlan, getPlans } from "../api/plan";
 import Modal from "../components/ui/Modal";
-import { useState, useLayoutEffect } from "react";
+import { useState } from "react";
 import PlanForm from "../components/plan/PlanForm";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { setCurrentPage } from "../state/navigator";
 
 function WorkspaceP() {
-    const dispatch = useDispatch();
     const { workspaceId } = useParams();
-    const { elementRef, data, setData, loading } = useInfiniteScrolling({
+    const { data, setData, loading } = useData({
         fetchFunction: getPlans,
-        limit: 10,
         filters: { workspaceId },
     });
     const [isOpen, setIsOpen] = useState(false);
-
-    useLayoutEffect(() => {
-        dispatch(setCurrentPage("workspace"));
-    }, [dispatch]);
 
     async function handleSubmit(values) {
         try {
@@ -61,7 +53,6 @@ function WorkspaceP() {
             </Header>
 
             <Plans
-                elementRef={elementRef}
                 data={data}
                 setData={setData}
                 loading={loading}

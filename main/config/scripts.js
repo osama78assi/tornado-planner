@@ -7,12 +7,12 @@ import workspace from "../services/workspace.js";
 export async function testDate() {
     try {
         console.log("Creating 3 workspaces...");
-        const wrokspace1 = await workspace.create({
+        const workspace1 = await workspace.create({
             name: "Workspace 1",
             description: "This is a test1 workspace common",
             icon: "MdContentPasteSearch",
         });
-        const wrokspace2 = await workspace.create({
+        const workspace2 = await workspace.create({
             name: "Workspace 2",
             description: "This is a test2 workspace",
             icon: "LuPackageSearch",
@@ -32,32 +32,32 @@ export async function testDate() {
             name: "Workspace1 Plan test 1",
             description: "This is workspace1 test1 plan",
             icon: "MdLocationSearching",
-            workspaceId: wrokspace1.dataValues.id,
+            workspaceId: workspace1.dataValues.id,
         });
         const workspace2Plan2 = await plan.create({
             name: "Workspace2 Plan test 4",
             description: "This is workspace2 test4 plan",
             icon: "RiChatSearchFill",
-            workspaceId: wrokspace2.dataValues.id,
+            workspaceId: workspace2.dataValues.id,
         });
         await plan.create({
             name: "Is this a plan ?",
             description: "Yeah reall it's is",
             icon: "RiChatSearchFill",
-            workspaceId: wrokspace2.dataValues.id,
+            workspaceId: workspace2.dataValues.id,
         });
         await plan.create({
             name: "Just do it bro",
             description: "I will in shaa Allah bro",
             icon: "RiChatSearchFill",
-            workspaceId: wrokspace2.dataValues.id,
+            workspaceId: workspace2.dataValues.id,
         });
         await plan.create({
             name: "This have a long description",
             description:
                 "lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem loremlorem lorem lorem lorem lorem lorem lorem lorem",
             icon: "RiChatSearchFill",
-            workspaceId: wrokspace2.dataValues.id,
+            workspaceId: workspace2.dataValues.id,
         });
 
         console.log("5 plans created successfully...");
@@ -109,12 +109,12 @@ export async function testDate() {
         const notePlan1 = await note.create({
             title: "How To Play",
             content: "it's hard to say that, But it's common and easy",
-            workspaceId: wrokspace1.dataValues.id,
+            workspaceId: workspace1.dataValues.id,
         });
         const notePlan2 = await note.create({
             title: "What is love",
             content: "her eyes...",
-            workspaceId: wrokspace2.dataValues.id,
+            workspaceId: workspace2.dataValues.id,
         });
 
         console.log("2 notes created successfully...");
@@ -125,10 +125,12 @@ export async function testDate() {
         const folder1 = await folderS.create({
             name: "folder 1",
             icon: "FiFolder",
+            workspaceId: workspace1.id,
         });
         const folder2 = await folderS.create({
             name: "folder 2",
             icon: "LuFolderHeart",
+            workspaceId: workspace2.id,
         });
 
         console.log("2 folders created succssfully...");
@@ -141,11 +143,13 @@ export async function testDate() {
             title: "Play Hard",
             content: "it's nice btw",
             folderId: folder1.dataValues.id,
+            workspaceId: folder1.dataValues.id
         });
         const note2 = await note.create({
             title: "Do Eyes Matter ?",
             content: "You might ask, Do anything matters except eyes ?",
             folderId: folder2.dataValues.id,
+            workspaceId: folder2.dataValues.id
         });
         console.log("2 notes created succssfully...");
 

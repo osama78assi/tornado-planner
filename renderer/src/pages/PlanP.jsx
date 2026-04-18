@@ -1,38 +1,33 @@
 import { useParams } from "react-router-dom";
 import PlanCardHeader from "../components/plan/PlanCardHeader";
-import { useEffect, useMemo, useState, useLayoutEffect } from "react";
-import useInfiniteScrolling from "../hooks/useInfiniteScrolling";
+import { useEffect, useMemo, useState } from "react";
+import useData from "../hooks/useData";
 import TasksTable from "../components/task/TaskTable";
+import TasksController from "../components/task/TasksController";
 import { getTasks } from "../api/task";
 import { getPlans } from "../api/plan";
-import Checkbox from "../components/ui/Checkbox";
+import { getConstantsSnyc } from "../util/constants";
 import { useDispatch } from "react-redux";
-import { setCurrentPage } from "../state/navigator";
+import { setCurrentWorkspace } from "../state/workspaces";
+import { clearNonSerializable } from "../util/main";
+import toast from "react-hot-toast";
+import { getWorkspaces } from "../api/workspace";
 
 function PlanP() {
-    const dispatch = useDispatch();
     const { planId } = useParams();
     const [loadingPlan, setLoadingPlan] = useState(true);
     const [plan, setPlan] = useState({});
-
-    useLayoutEffect(() => {
-        dispatch(setCurrentPage("workspace"));
-    }, [dispatch]);
+    const dispatch = useDispatch();
 
     const {
         data: tasks,
         setData,
-        elementRef,
-        pagination,
         loading: loadingTasks,
-    } = useInfiniteScrolling({
+    } = useData({
         fetchFunction: getTasks,
         filters: { planId: planId },
-        limit: 12,
-        page: 1,
     });
     const [headers, setHeaders] = useState([]);
-
     // Fetch the plan
     useEffect(() => {
         async function fetchPlan() {
@@ -45,68 +40,84 @@ function PlanP() {
                 setPlan(plan);
                 // Set the headers
                 let headers = [];
-                // 1. add the checkbox
+                // 1. add the checkbox/actions column
                 headers.push({
                     dataIndex: ["completed"],
-                    header: () => {
-                        return null;
-                    },
-                    render: (row) => {
-                        // TODO: add a quick function to mark the task as done
-                        return (
-                            <div className="flex items-center justify-center">
-                                <Checkbox />
-                            </div>
-                        );
-                    },
-                    columnStyle: {
-                        width: "60px", // or whatever fits your checkbox
-                    },
+                    width: "100px",
                 });
 
                 // 2. add the task title
                 headers.push({
                     dataIndex: ["title"],
-                    header: "Title",
-                    render: (row) => {
-                        return (
-                            <div className="overflow-hidden whitespace-nowrap text-ellipsis flex items-center">
-                                {row?.title}
-                            </div>
-                        );
-                    },
-                    columnStyle: {
-                        maxWidth: "200px",
-                    },
+                    header: "title",
+                    type: "text",
+                    sortable: true,
+                    filterable: true,
+                    // minWidth: "100px",
+                    // maxWidth: "200px",
                 });
 
                 // 3. add the description
                 headers.push({
                     dataIndex: ["description"],
-                    header: "Description",
-                    render: (row) => {
-                        return (
-                            <div className="break-all flex items-center">
-                                {row?.description}
-                            </div>
-                        );
-                    },
+                    header: "description",
+                    type: "text",
+                    sortable: true,
+                    filterable: true,
+                    // minWidth: "200px",
+                    // maxWidth: "400px",
                 });
 
                 // Loop over the metadata and add
                 Object.keys(plan.metadata).forEach((schema) => {
+                    // Determine column-specific width based on schema name
+                    const lowerSchema = schema.toLowerCase();
+                    let columnWidth;
+
+                    if (
+                        lowerSchema === "start date" ||
+                        lowerSchema === "end date"
+                    ) {
+                        // columnWidth = "200px";
+                    } else if (
+                        lowerSchema === "status" ||
+                        lowerSchema === "priority"
+                    ) {
+                        // columnWidth = "200px";
+                    }
+
                     headers.push({
-                        dataIndex: ["metadata", schema],
+                        dataIndex: ["columns", schema],
                         header: schema,
                         type: plan.metadata[schema].type,
+                        minWidth: "300px",
+                        sortable: true,
+                        filterable: true,
                         ...(plan.metadata[schema]?.values
                             ? { values: plan.metadata[schema].values }
                             : {}),
+                        ...(plan.metadata[schema]?.format
+                            ? { dateFormat: plan.metadata[schema].format }
+                            : {}),
+                        ...(columnWidth ? { width: columnWidth } : {}),
                     });
                 });
 
                 // Set them
                 setHeaders(headers);
+
+                // Get the workpsace
+                const {
+                    data: [workpsace],
+                } = await getWorkspaces({
+                    limit: 1,
+                    filters: { id: plan.workspaceId },
+                });
+
+                clearNonSerializable(workpsace);
+
+                // Update the selected workspace without affecting it
+                dispatch(setCurrentWorkspace(workpsace));
             } catch (err) {
                 toast.error(
                     err.message ||
@@ -121,14 +132,20 @@ function PlanP() {
         fetchPlan();
     }, []);
 
+
     return (
         <div className="px-2 py-3">
             <PlanCardHeader plan={plan} loading={loadingPlan} />
 
-            <div className="py-2 w-full items overflow-auto">
-                <TasksTable columns={headers} data={tasks} />
+            <TasksController tasks={tasks} setData={setData} plan={plan} />
 
-                <div ref={elementRef} />
+            <div className="py-2 w-full items overflow-auto">
+                <TasksTable
+                    columns={headers}
+                    data={tasks}
+                    planId={planId}
+                    setData={setData}
+                />
             </div>
         </div>
     );

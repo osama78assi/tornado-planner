@@ -11,7 +11,6 @@ export const searchNotes = throttleSearch(async function ({
             { content: { like$: `%${query}%` } },
         ],
     };
-    console.log('\n#############\n', "", '\n#############\n');
 
     const res = await window.notes.get({ page, limit, filters, search: true });
 

@@ -52,6 +52,7 @@ function IconButton({
     icon,
     iconDir = "right",
     iconProps,
+    className: cls,
     ...props
 }) {
     let sizes = {
@@ -76,7 +77,7 @@ function IconButton({
 
     return (
         <button
-            className={`btn ${icon ? "btn-icon" : ""} ${className}`}
+            className={`btn ${icon ? "btn-icon" : ""} ${className} ${cls}`}
             disabled={disabled}
             onClick={(e) => !disabled && handleClick?.(e)}
             {...props}
@@ -92,6 +93,20 @@ function IconButton({
     );
 }
 
+function BadgeBtn({ icon, handleClick, className, disabled, ...props }) {
+    return (
+        <button
+            className={`flex p-[0.5rem] bg-(--thirdary-color) rounded-lg justify-between items-center cursor-pointer gap-1 transition-all text-xl focus-within:outline-0! focus:outline-0! focus-visible:outline-0! ${disabled ? "opacity-50 cursor-not-allowed!" : ""} ${className ? className : ""}`}
+            onClick={(e) => !disabled && handleClick?.(e)}
+            disabled={disabled}
+            {...props}
+        >
+            {icon}
+        </button>
+    );
+}
+
 Button.IconButton = IconButton;
+Button.BadgeBtn = BadgeBtn;
 
 export default Button;

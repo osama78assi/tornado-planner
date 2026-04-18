@@ -87,7 +87,7 @@ function WorkspaceForm({
                 <Input
                     disabled={loading}
                     id="workspace-name"
-                    className="basis-2/3 px-2! py-2! rounded-2xl!"
+                    className="basis-2/3 px-2! py-2!"
                     onChange={(e) => {
                         if (e.target.value) form.current.name = e.target.value;
                         else form.current.name = null;
@@ -106,7 +106,7 @@ function WorkspaceForm({
                 <Input.TextArea
                     disabled={loading}
                     id="workspace-name"
-                    className="basis-2/3 px-2! py-2! rounded-2xl! resize-none"
+                    className="basis-2/3 px-2! py-2! resize-none"
                     onChange={(e) => {
                         if (e.target.value)
                             form.current.description = e.target.value;

@@ -21,6 +21,7 @@ Folder.init(
         },
         workspaceId: {
             type: DataTypes.BIGINT,
+            allowNull: false,
             references: {
                 model: "workspaces",
                 key: "id",

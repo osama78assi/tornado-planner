@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { IoMdSearch } from "react-icons/io";
+import { TbSettings } from "react-icons/tb";
+import { useNavigate } from "react-router-dom";
 import Modal from "../ui/Modal";
 import SearchResults from "./SearchResults";
 import { searchNotes } from "../../api/note";
@@ -7,10 +9,12 @@ import NoteResult from "../note/NoteResult";
 import { searchTasks } from "../../api/task";
 import TaskResult from "../task/TaskResult";
 import Input from "../ui/Input";
+import Button from "../ui/Button";
 
 function WorkspaceHeader() {
     const pageInputRef = useRef();
     const modalInputRef = useRef();
+    const nav = useNavigate();
 
     const [isOpen, setIsOpen] = useState(false);
     const [searchQ, setSearchQ] = useState("");
@@ -43,24 +47,34 @@ function WorkspaceHeader() {
 
     return (
         <div className="flex items-center gap-2 w-full px-4">
-            <Input.InputIcon
-                icon={<IoMdSearch className="text-2xl" />}
-                parentProps={{
-                    onClick: () => {
-                        setTimeout(() => {
-                            if (modalInputRef.current) {
-                                modalInputRef.current.focus();
-                            }
-                        }, 0);
+            <div className="flex-1">
+                <Input.InputIcon
+                    icon={<IoMdSearch className="text-2xl" />}
+                    parentProps={{
+                        className: "rounded-full",
+                        onClick: () => {
+                            setTimeout(() => {
+                                if (modalInputRef.current) {
+                                    modalInputRef.current.focus();
+                                }
+                            }, 0);
 
-                        setIsOpen(true);
-                    },
-                }}
-                inputProps={{
-                    ref: pageInputRef,
-                    onMouseDown: (e) => e.preventDefault(),
-                    placeholder: "Search for notes and tasks...",
-                }}
+                            setIsOpen(true);
+                        },
+                    }}
+                    inputProps={{
+                        ref: pageInputRef,
+                        onMouseDown: (e) => e.preventDefault(),
+                        placeholder: "Search for notes and tasks...",
+                    }}
+                />
+            </div>
+
+            <Button.BadgeBtn
+                icon={
+                    <TbSettings className="text-(--main-interactive-color-v1)" />
+                }
+                handleClick={() => nav("/settings")}
             />
 
             <Modal
@@ -75,6 +89,7 @@ function WorkspaceHeader() {
                     <Input.InputIcon
                         icon={<IoMdSearch className="text-2xl" />}
                         parentProps={{
+                            className: "rounded-full",
                             onClick: () => {
                                 if (modalInputRef.current) {
                                     modalInputRef.current.focus();

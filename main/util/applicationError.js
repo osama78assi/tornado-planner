@@ -20,7 +20,9 @@ export function errorHandler(err) {
             ...(err.attributes ? { attributes: err.attributes } : {}),
         };
     }
-    
+
+    console.log("\n#############\n", err, "\n#############\n");
+
     return {
         success: false,
         message: "something went wrong",

@@ -140,6 +140,7 @@ class TaskServices {
         }
     }
 
+    // Currently it's getting the data based on the completed then creation date
     async getAll(page = 1, limit = 10, filters = null, loadAll = false) {
         try {
             // Parse sequelize where statement
@@ -168,6 +169,10 @@ class TaskServices {
                 limit: safeLimit,
                 offset,
                 ...(where ? { where } : {}),
+                order: [
+                    ["completed", "ASC"],
+                    ["createdAt", "DESC"],
+                ],
             });
 
             // Calculate the remaining pages (1 if loadAll, otherwise calculated)

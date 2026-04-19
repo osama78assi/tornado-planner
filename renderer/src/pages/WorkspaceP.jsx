@@ -6,15 +6,19 @@ import Plans from "../components/plan/Plans";
 import useData from "../hooks/useData";
 import { createPlan, getPlans } from "../api/plan";
 import Modal from "../components/ui/Modal";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PlanForm from "../components/plan/PlanForm";
 import toast from "react-hot-toast";
 
 function WorkspaceP() {
     const { workspaceId } = useParams();
+    const filters = useMemo(() => {
+        return { workspaceId };
+    }, []);
+
     const { data, setData, loading } = useData({
         fetchFunction: getPlans,
-        filters: { workspaceId },
+        filters,
     });
     const [isOpen, setIsOpen] = useState(false);
 

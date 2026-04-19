@@ -207,3 +207,56 @@ export function clearNonSerializable(data) {
     if (data?.createdAt) delete data.createdAt;
     if (data?.updatedAt) delete data.updatedAt;
 }
+
+// Validate date range consistency between start date and end date
+export function synchronizeDateRange(payload, originalRow) {
+    // Get start date and end date from payload or original row
+    let startDate;
+    let endDate;
+
+    if (payload?.metadata?.["start date"] !== undefined) {
+        startDate = payload.metadata["start date"];
+    } else {
+        startDate = originalRow?.columns?.["start date"];
+    }
+
+    if (payload?.metadata?.["end date"] !== undefined) {
+        endDate = payload.metadata["end date"];
+    } else {
+        endDate = originalRow?.columns?.["end date"];
+    }
+
+    // If both dates are null or undefined, no validation needed
+    if (!startDate && !endDate) {
+        return;
+    }
+
+    // If only one date is provided, no validation needed
+    if (!startDate || !endDate) {
+        return;
+    }
+
+    // Convert to Date objects for comparison
+    const startDateTime = new Date(startDate);
+    const endDateTime = new Date(endDate);
+
+    // Check if dates are valid
+    if (isNaN(startDateTime.getTime())) {
+        throw new Error(
+            "Inconsistent date range: start date is not a valid date",
+        );
+    }
+
+    if (isNaN(endDateTime.getTime())) {
+        throw new Error(
+            "Inconsistent date range: end date is not a valid date",
+        );
+    }
+
+    // Validate that start date is before or equal to end date
+    if (startDateTime > endDateTime) {
+        throw new Error(
+            "Inconsistent date range: start date is after end date",
+        );
+    }
+}

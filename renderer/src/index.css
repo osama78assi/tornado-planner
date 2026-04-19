@@ -11,6 +11,9 @@
 
     --secondary-interactive-color: #ee6300;
     --secondary-interactive-color-v1: #e87320;
+
+    --main-header-height: 70px;
+    --main-body-height: calc(100% - var(--main-header-height));
 }
 
 :root.dark-theme {
@@ -159,12 +162,11 @@
 }
 
 .main-content_header {
-    @apply flex justify-between items-center bg-[var(--secondary-color)] h-[70px] border-b border-b-[var(--main-divider-color)] z-50 relative;
+    @apply flex justify-between items-center bg-[var(--secondary-color)] h-(--main-header-height) border-b border-b-[var(--main-divider-color)] z-50 relative;
 }
 
 .main-content_body {
-    @apply bg-(--main-color) w-full transition-[width] overflow-auto;
-    height: calc(100% - 70px);
+    @apply bg-(--main-color) w-full transition-[width] overflow-auto h-(--main-body-height);
 }
 
 .sidebar-header {
@@ -220,7 +222,7 @@
 /* Tables */
 
 .tornado-table-container {
-    @apply overflow-auto border w-fit;
+    @apply border w-fit;
     border-color: var(--main-divider-color);
     background: var(--secondary-color);
 }
@@ -235,7 +237,7 @@
 }
 
 .tornado-table-thead.sticky {
-    @apply sticky top-0 z-55!;
+    @apply sticky top-0 z-1!;
 }
 
 .tornado-table-th {

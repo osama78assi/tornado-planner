@@ -4,8 +4,13 @@ import Dropdown from "../ui/Dropdown";
 import TaskRowActions from "./TaskRowActions";
 import { createTask, updateTask } from "../../api/task";
 import toast from "react-hot-toast";
-import { takeFieldByKey, formateDateBy } from "../../util/main";
+import {
+    takeFieldByKey,
+    formateDateBy,
+    synchronizeDateRange,
+} from "../../util/main";
 import { getConstantsSnyc } from "../../util/constants";
+import { synchronizeTaskStatus } from "../../util/tableUtils";
 
 /**
  * InputRenderer component - Renders appropriate input based on column type
@@ -13,16 +18,28 @@ import { getConstantsSnyc } from "../../util/constants";
  * @param {Object} props.col - Column configuration
  * @param {any} props.initialValue - Initial value for the input
  * @param {Function} props.onChange - Callback when value changes (key, value)
+ * @param {boolean} props.creationMode - To check what is the mode
  */
-function InputRenderer({ col, initialValue, onChange }) {
+function InputRenderer({ col, initialValue, onChange, creationMode }) {
+    const inputRef = useRef(null);
+
     function handleChange(newValue) {
         onChange?.(col.header, newValue);
     }
+
+    // Auto-focus on title input on initial render
+    // This improves UX by allowing users to immediately start typing when creating/editing a task
+    useEffect(() => {
+        if (col.header === "title" && inputRef.current && creationMode) {
+            inputRef.current.focus();
+        }
+    }, []);
 
     switch (col.type) {
         case "text":
             return (
                 <Input.TextArea
+                    ref={inputRef}
                     defaultValue={initialValue}
                     onChange={(e) => handleChange(e.target.value)}
                     placeholder={col.header}
@@ -95,31 +112,31 @@ function DateTimeInput({ initialValue, onChange, col }) {
     const displayRef = useRef(null);
     const [selectedValue, setSelectedValue] = useState(initialValue || "");
 
-    const handleChange = (e) => {
+    function handleChange(e) {
         const newValue = e.target.value;
         setSelectedValue(newValue);
         onChange?.(newValue);
-    };
+    }
 
-    const handleClick = () => {
+    function handleClick() {
         inputRef.current?.showPicker?.();
-    };
+    }
 
-    const handleFocus = () => {
+    function handleFocus() {
         if (displayRef.current) {
             displayRef.current.classList.add(
                 "shadow-[0_0_10px_var(--main-interactive-color-v3)]",
             );
         }
-    };
+    }
 
-    const handleBlur = () => {
+    function handleBlur() {
         if (displayRef.current) {
             displayRef.current.classList.remove(
                 "shadow-[0_0_10px_var(--main-interactive-color-v3)]",
             );
         }
-    };
+    }
 
     // Format display value
     let displayValue = selectedValue;
@@ -162,9 +179,17 @@ function DateTimeInput({ initialValue, onChange, col }) {
  * @param {Array} props.renderColumns - Array of column configurations
  * @param {Function} props.onSubmit - Callback when form is submitted successfully
  * @param {Function} props.onCancel - Callback when cancel is clicked
+ * @param {Function} props.onDelete - Callback when task is deleted
  * @param {number} props.planId - ID of the current plan
  */
-function FormTaskRow({ row, renderColumns, onSubmit, onCancel, planId }) {
+function FormTaskRow({
+    row,
+    renderColumns,
+    onSubmit,
+    onCancel,
+    onDelete,
+    planId,
+}) {
     // Create refs for each column to track form values (using header as key)
     const formRefs = useRef({});
     // Track initial values to detect changes for update mode
@@ -242,6 +267,12 @@ function FormTaskRow({ row, renderColumns, onSubmit, onCancel, planId }) {
                     }
                 });
 
+                // Synchronize completed and status before creating
+                synchronizeTaskStatus(payload);
+
+                // Validate date range consistency
+                synchronizeDateRange(payload, row);
+
                 // Call create API
                 const newTask = await createTask(payload);
                 toast.success("Task created successfully");
@@ -288,29 +319,39 @@ function FormTaskRow({ row, renderColumns, onSubmit, onCancel, planId }) {
                     return;
                 }
 
+                // Synchronize completed and status before updating
+                synchronizeTaskStatus(payload);
+
+                // Validate date range consistency
+                synchronizeDateRange(payload, row);
+
                 // Call update API with only changed fields
                 const updatedTask = await updateTask(row.id, payload);
-                console.log(updatedTask);
-                
+
                 toast.success("Task updated successfully");
 
                 // Update task in parent array
                 onSubmit?.(updatedTask);
             }
         } catch (error) {
+            // Display error message and terminate
             toast.error(error.message || "Failed to save task");
             console.error(error);
+            return;
         }
     }
 
     // Handle input change
     function handleInputChange(key, value) {
+        console.log(row.__creationId);
+
         formRefs.current[key] = { value };
+        console.log(formRefs.current);
     }
 
     // Handle Enter key press
     function handleKeyDown(e) {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
         }
@@ -330,6 +371,7 @@ function FormTaskRow({ row, renderColumns, onSubmit, onCancel, planId }) {
                                 row={row}
                                 onConfirm={handleSubmit}
                                 onCancel={onCancel}
+                                onDelete={onDelete}
                             />
                         </td>
                     );
@@ -344,8 +386,11 @@ function FormTaskRow({ row, renderColumns, onSubmit, onCancel, planId }) {
                         <InputRenderer
                             key={`${col.__id}-${renderKey}`}
                             col={col}
-                            initialValue={initialValues.current[col.header]}
+                            initialValue={
+                                formRefs.current[col.header]?.value || ""
+                            }
                             onChange={handleInputChange}
+                            creationMode={row?.__creationId ? true : false}
                         />
                     </td>
                 );

@@ -7,9 +7,6 @@ export default function useData({ fetchFunction, filters }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Memoize filters to prevent unnecessary re-renders
-    const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
-
     useEffect(() => {
         async function fetchData() {
             try {
@@ -20,7 +17,7 @@ export default function useData({ fetchFunction, filters }) {
                 // Fetch all data by passing loadAll: true
                 const res = await fetchFunction?.({
                     loadAll: true,
-                    filters: memoizedFilters,
+                    filters: filters,
                 });
 
                 // Set the data
@@ -43,7 +40,7 @@ export default function useData({ fetchFunction, filters }) {
         }
 
         fetchData();
-    }, [memoizedFilters, fetchFunction]);
+    }, [filters, fetchFunction]);
 
     return { data, setData, loading, error };
 }

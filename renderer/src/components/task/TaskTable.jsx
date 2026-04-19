@@ -1,11 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { takeFieldByKey } from "../../util/main";
 import { v4 as generateId } from "uuid";
-import { compareValues, applyColumnFilter } from "../../util/tableUtils";
+import {
+    compareValues,
+    applyColumnFilter,
+    synchronizeTaskStatus,
+} from "../../util/tableUtils";
 import TableHeader from "./TableHeader";
 import TableCell from "./TableCell";
 import TaskRow from "./TaskRow";
 import FormTaskRow from "./FormTaskRow";
+import { updateTask } from "../../api/task";
+import toast from "react-hot-toast";
 
 /**
  * @typedef Column
@@ -79,11 +85,11 @@ function TasksTable({ columns, data, planId, setData }) {
             return;
         }
 
-        // Create a copy of data to sort
-        const sortedData = [...data];
+        // Separate tasks with __creationId from regular tasks
+        const regularTasks = data.filter((task) => !task.__creationId);
 
-        // Sort the data
-        sortedData.sort((a, b) => {
+        // Sort only the regular tasks
+        regularTasks.sort((a, b) => {
             let compareResult;
 
             // Use custom sorter if provided
@@ -96,6 +102,24 @@ function TasksTable({ columns, data, planId, setData }) {
 
             // Apply direction (1 for asc, -1 for desc)
             return compareResult * direction;
+        });
+
+        // Combine tasks: keep creation tasks in their original positions
+        const sortedData = [];
+        let regularIndex = 0;
+
+        // Iterate through original data to maintain creation task positions
+        data.forEach((task) => {
+            if (task.__creationId) {
+                // Keep creation task in its original position
+                sortedData.push(task);
+            } else {
+                // Add next sorted regular task
+                if (regularIndex < regularTasks.length) {
+                    sortedData.push(regularTasks[regularIndex]);
+                    regularIndex++;
+                }
+            }
         });
 
         setRenderedData(sortedData);
@@ -123,24 +147,54 @@ function TasksTable({ columns, data, planId, setData }) {
     function handleFormSubmit(newTask, creationId) {
         if (creationId) {
             // Create mode: replace temporary task with real task
-            setData((prevTasks) =>
-                prevTasks.map((task) =>
-                    task.__creationId === creationId ? newTask : task,
-                ),
-            );
+            setData((prevTasks) => {
+                // Check if the new task is completed
+                if (newTask.completed) {
+                    // Remove the temporary task and add the new task to the end
+                    const filteredTasks = prevTasks.filter(
+                        (task) => task.__creationId !== creationId,
+                    );
+                    return [...filteredTasks, newTask];
+                } else {
+                    // Keep the task in its current position
+                    return prevTasks.map((task) =>
+                        task.__creationId === creationId ? newTask : task,
+                    );
+                }
+            });
         } else {
             // Update mode: replace existing task and remove __updateId
-            setData((prevTasks) =>
-                prevTasks.map((task) =>
-                    task.id === newTask.id ? newTask : task,
-                ),
-            );
+            setData((prevTasks) => {
+                // Check if the updated task is completed
+                if (newTask.completed) {
+                    // Remove the task from its current position and add it to the end
+                    const filteredTasks = prevTasks.filter(
+                        (task) => task.id !== newTask.id,
+                    );
+                    return [...filteredTasks, newTask];
+                } else {
+                    // Keep the task in its current position
+                    return prevTasks.map((task) =>
+                        task.id === newTask.id ? newTask : task,
+                    );
+                }
+            });
             // Also update renderedData to remove __updateId
-            setRenderedData((prevData) =>
-                prevData.map((task) =>
-                    task.id === newTask.id ? newTask : task,
-                ),
-            );
+            setRenderedData((prevData) => {
+                // Check if the updated task is completed
+                if (newTask.completed) {
+                    // Remove the task from its current position and add it to the end
+                    const filteredData = prevData.filter(
+                        (task) => task.id !== newTask.id,
+                    );
+                    return [...filteredData, newTask];
+                } else {
+                    // Keep the task in its current position
+                    return prevData.map((task) =>
+                        task.id === newTask.id ? newTask : task,
+                    );
+                }
+            });
         }
     }
 
@@ -167,10 +221,50 @@ function TasksTable({ columns, data, planId, setData }) {
         }
     }
 
+    // Handle task deletion
+    function handleDelete(taskId) {
+        // Remove task from data array
+        setData((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    }
+
     // Handle marking task as complete
-    function handleMarkComplete(row, completed) {
-        // Future implementation: update task completion status
-        console.log("Mark complete:", row, completed);
+    async function handleMarkComplete(row, completed) {
+        try {
+            // Create payload with completed field
+            const payload = { completed };
+
+            // Synchronize completed with status metadata
+            synchronizeTaskStatus(payload);
+
+            // Update task
+            const updatedTask = await updateTask(row.id, payload);
+
+            // Update task in data array
+            setData((prevTasks) => {
+                // Check if the task is marked as completed
+                if (completed) {
+                    // Remove the task from its current position and add it to the end
+                    const filteredTasks = prevTasks.filter(
+                        (task) => task.id !== updatedTask.id,
+                    );
+                    return [...filteredTasks, updatedTask];
+                } else {
+                    // Keep the task in its current position
+                    return prevTasks.map((task) =>
+                        task.id === updatedTask.id ? updatedTask : task,
+                    );
+                }
+            });
+
+            toast.success(
+                completed
+                    ? "Task marked as done"
+                    : "Task marked as not started",
+            );
+        } catch (error) {
+            toast.error(error.message || "Failed to update task");
+            console.error(error);
+        }
     }
 
     // Apply all active filters to the data
@@ -209,7 +303,7 @@ function TasksTable({ columns, data, planId, setData }) {
     }
 
     return (
-        <div className="tornado-table-container w-fit overflow-x-auto">
+        <div className="tornado-table-container">
             <table className="tornado-table">
                 <colgroup>
                     {renderColumns?.map((col) => (
@@ -223,11 +317,12 @@ function TasksTable({ columns, data, planId, setData }) {
                                 ...(col.maxWidth
                                     ? { maxWidth: col.maxWidth }
                                     : {}),
+                                height: "fit-content",
                             }}
                         />
                     ))}
                 </colgroup>
-                <thead className="tornado-table-thead sticky z-1!">
+                <thead className="tornado-table-thead sticky">
                     <tr ref={headerRowRef}>
                         {renderColumns?.map((col) => (
                             <TableHeader
@@ -261,6 +356,7 @@ function TasksTable({ columns, data, planId, setData }) {
                                     renderColumns={renderColumns}
                                     onSubmit={handleFormSubmit}
                                     onCancel={() => handleCancel(row)}
+                                    onDelete={handleDelete}
                                     planId={planId}
                                 />
                             );

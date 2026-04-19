@@ -364,8 +364,6 @@ function Dropdown({
 
     // Pass it to parent
     function forceClose() {
-        console.log("RF");
-
         setOpen(false);
         onClose?.();
         const parent = parentRef.current;

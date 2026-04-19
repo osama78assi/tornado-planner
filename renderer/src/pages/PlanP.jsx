@@ -19,13 +19,13 @@ function PlanP() {
     const [plan, setPlan] = useState({});
     const dispatch = useDispatch();
 
-    const {
-        data: tasks,
-        setData,
-        loading: loadingTasks,
-    } = useData({
+    const filters = useMemo(() => {
+        return { planId: planId };
+    }, []);
+
+    const { data: tasks, setData } = useData({
         fetchFunction: getTasks,
-        filters: { planId: planId },
+        filters: filters,
     });
     const [headers, setHeaders] = useState([]);
     // Fetch the plan
@@ -53,8 +53,6 @@ function PlanP() {
                     type: "text",
                     sortable: true,
                     filterable: true,
-                    // minWidth: "100px",
-                    // maxWidth: "200px",
                 });
 
                 // 3. add the description
@@ -64,8 +62,6 @@ function PlanP() {
                     type: "text",
                     sortable: true,
                     filterable: true,
-                    // minWidth: "200px",
-                    // maxWidth: "400px",
                 });
 
                 // Loop over the metadata and add
@@ -132,14 +128,13 @@ function PlanP() {
         fetchPlan();
     }, []);
 
-
     return (
         <div className="px-2 py-3">
             <PlanCardHeader plan={plan} loading={loadingPlan} />
 
             <TasksController tasks={tasks} setData={setData} plan={plan} />
 
-            <div className="py-2 w-full items overflow-auto">
+            <div className="pb-2 mx-auto w-[95%] max-h-[50dvh] overflow-auto">
                 <TasksTable
                     columns={headers}
                     data={tasks}

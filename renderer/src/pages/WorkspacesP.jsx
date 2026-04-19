@@ -18,8 +18,6 @@ function WorkspacesP() {
     });
     const [isOpen, setIsOpen] = useState(false);
 
-    console.log(getConstantsSnyc());
-
     async function handleCreateWorkspace(data) {
         try {
             const newWorkspace = await createWorkspace(data);

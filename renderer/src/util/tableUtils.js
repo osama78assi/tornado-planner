@@ -74,3 +74,35 @@ export function applyColumnFilter(rowValue, filterValue, columnType) {
             return true;
     }
 }
+
+/**
+ * Synchronize task completed field with status metadata (mutates payload by reference)
+ * @param {Object} payload - Task payload with optional completed and metadata.status fields
+ */
+export function synchronizeTaskStatus(payload) {
+    // If completed is explicitly set
+    if (typeof payload.completed === "boolean") {
+        // Ensure metadata exists
+        if (!payload.metadata) {
+            payload.metadata = {};
+        }
+
+        // Sync status based on completed
+        if (payload.completed === true) {
+            payload.metadata.status = "done";
+        } else if (payload.completed === false) {
+            payload.metadata.status = "not started";
+        }
+    }
+
+    // If status is set in metadata
+    if (payload.metadata?.status) {
+        // Sync completed based on status
+        if (payload.metadata.status === "done") {
+            payload.completed = true;
+        } else {
+            payload.completed = false;
+        }
+    }
+}
+

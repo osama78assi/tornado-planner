@@ -68,7 +68,7 @@ class TaskHandlers {
 
     async destroy(id) {
         try {
-            await taskServices.destory(id);
+            await taskServices.delete(id);
 
             return {
                 success: true,
